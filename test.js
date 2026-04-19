@@ -1,22 +1,25 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
 require("dotenv").config();
+const OpenAI = require("openai");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const client = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: "https://api.groq.com/openai/v1",
+});
 
 async function run() {
   try {
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+    const res = await client.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      messages: [
+        { role: "user", content: "Hello" }
+      ],
+      temperature: 0.7,
     });
 
-    const result = await model.generateContent("Hello");
-    const response = await result.response;
-    const text = response.text();
-
-    console.log("✅ GEMINI RESPONSE:");
-    console.log(text);
+    console.log("✅ GROQ RESPONSE:");
+    console.log(res.choices[0].message.content);
   } catch (err) {
-    console.error("❌ ERROR:", err);
+    console.error(" ERROR:", err);
   }
 }
 

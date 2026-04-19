@@ -2,7 +2,6 @@ import connectDB from "@/lib/db";
 import Settings from "@/model/setting.model";
 import { NextResponse } from "next/server";
 
-// ✅ GET SETTINGS (fetch by ownerId)
 export async function GET(req: Request) {
   try {
     await connectDB();
@@ -28,7 +27,6 @@ export async function GET(req: Request) {
   }
 }
 
-// ✅ POST SETTINGS (create or update)
 export async function POST(req: Request) {
   try {
     await connectDB();

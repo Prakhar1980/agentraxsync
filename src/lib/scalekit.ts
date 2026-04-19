@@ -1,8 +1,23 @@
-import { Scalekit } from '@scalekit-sdk/node';
+import { Scalekit } from "@scalekit-sdk/node";
 
-// Initialize the Scalekit client with your credentials
-export const scalekit = new Scalekit(
-  process.env.SCALEKIT_ENVIRONMENT_URL!,
-  process.env.SCALEKIT_CLIENT_ID!,
-  process.env.SCALEKIT_CLIENT_SECRET!
-);
+let scalekit: Scalekit | null = null;
+
+try {
+  if (
+    process.env.SCALEKIT_ENVIRONMENT_URL &&
+    process.env.SCALEKIT_CLIENT_ID &&
+    process.env.SCALEKIT_CLIENT_SECRET
+  ) {
+    scalekit = new Scalekit(
+      process.env.SCALEKIT_ENVIRONMENT_URL,
+      process.env.SCALEKIT_CLIENT_ID,
+      process.env.SCALEKIT_CLIENT_SECRET
+    );
+  } else {
+    console.warn("⚠️ Scalekit env not configured");
+  }
+} catch (err) {
+  console.error("❌ Scalekit init failed:", err);
+}
+
+export { scalekit };

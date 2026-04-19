@@ -22,8 +22,6 @@ export default function DashboardClient({ ownerId, email }: Props) {
   const [saved, setSaved] = useState(false);
 
   const firstLetter = email?.charAt(0).toUpperCase() || "U";
-
-  // 🔥 FETCH SETTINGS (UPDATED)
   const fetchSettings = async () => {
     if (!ownerId) return;
 
@@ -51,8 +49,6 @@ export default function DashboardClient({ ownerId, email }: Props) {
   useEffect(() => {
     fetchSettings();
   }, [ownerId]);
-
-  // 🔥 SAVE SETTINGS (UPDATED)
   const saveSettings = async () => {
     if (!ownerId) return;
 
@@ -92,7 +88,6 @@ export default function DashboardClient({ ownerId, email }: Props) {
     }
   };
 
-  // 🔥 HANDLE CHANGE
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -102,7 +97,6 @@ export default function DashboardClient({ ownerId, email }: Props) {
     }));
   };
 
-  // 🔥 AUTH CHECK
   if (!ownerId) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -112,12 +106,8 @@ export default function DashboardClient({ ownerId, email }: Props) {
       </div>
     );
   }
-
-  // ✅ ONLY FIX ADDED HERE
   return (
     <div className="min-h-screen bg-gray-100">
-
-      {/* ================= NAVBAR ================= */}
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -157,23 +147,15 @@ export default function DashboardClient({ ownerId, email }: Props) {
           </div>
         </div>
       </motion.header>
-
-      {/* ================= CONTENT ================= */}
       <div className="pt-24 px-4 sm:px-6 pb-10">
         <div className="max-w-4xl mx-auto space-y-6">
-
-          {/* HEADER */}
           <div className="bg-white rounded-2xl shadow-sm border p-6 hover:shadow-md transition">
             <h1 className="text-2xl font-bold">AI Chatbot Dashboard ⚡</h1>
             <p className="text-gray-500 text-sm mt-1">
               Configure your AI assistant to respond like your business
             </p>
           </div>
-
-          {/* MAIN CARD */}
           <div className="bg-white rounded-2xl shadow-sm border p-6 space-y-5 hover:shadow-md transition">
-
-            {/* BUSINESS NAME */}
             <div>
               <label className="text-sm font-medium text-gray-700">
                 Business Name
@@ -189,8 +171,6 @@ export default function DashboardClient({ ownerId, email }: Props) {
                 onChange={handleChange}
               />
             </div>
-
-            {/* SUPPORT EMAIL */}
             <div>
               <label className="text-sm font-medium text-gray-700">
                 Support Email
@@ -206,8 +186,6 @@ export default function DashboardClient({ ownerId, email }: Props) {
                 onChange={handleChange}
               />
             </div>
-
-            {/* KNOWLEDGE BASE */}
             <div>
               <label className="text-sm font-medium text-gray-700">
                 Knowledge Base
@@ -230,7 +208,7 @@ export default function DashboardClient({ ownerId, email }: Props) {
                   exit={{ opacity: 0 }}
                   className="text-green-700 text-sm font-medium bg-green-50 border border-green-200 p-3 rounded-xl"
                 >
-                  Settings saved successfully ✅
+                  Settings saved successfully 
                 </motion.div>
               )}
             </AnimatePresence>

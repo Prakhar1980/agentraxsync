@@ -1,36 +1,42 @@
 import mongoose from "mongoose";
 
-const mongo_url = process.env.MONGODB_URL;
+const MONGODB_URL: string = process.env.MONGODB_URL || "";
 
-if (!mongo_url) {
-  throw new Error("Please define MONGODB_URL in .env.local");
+if (!MONGODB_URL) {
+  throw new Error("❌ Please define MONGODB_URL in .env");
 }
 
-let cached = global.mongoose;
+const globalWithMongoose = global as typeof globalThis & {
+  mongoose?: {
+    conn: mongoose.Connection | null;
+    promise: Promise<mongoose.Connection> | null;
+  };
+};
 
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
+if (!globalWithMongoose.mongoose) {
+  globalWithMongoose.mongoose = { conn: null, promise: null };
 }
 
-const connectDB = async () => {
-  if (cached.conn) {
-    return cached.conn;
+export default async function connectDB() {
+  if (globalWithMongoose.mongoose?.conn) {
+    return globalWithMongoose.mongoose.conn;
   }
 
-  if(!cached.promise){
-    cached.promise = mongoose.connect(mongo_url!).then((c)=>c.connection)
-     console.log("✅ MongoDB Connected");
-
+  if (!globalWithMongoose.mongoose?.promise) {
+    globalWithMongoose.mongoose!.promise = mongoose
+      .connect(MONGODB_URL)
+      .then((m) => {
+        console.log("✅ MongoDB Connected");
+        return m.connection;
+      })
+      .catch((err) => {
+        console.error("❌ MongoDB Connection Error:", err);
+        throw err;
+      });
   }
-try{
-    cached.conn = await cached.promise
-}
-catch(err){
-    console.log(err)
-    console.log("❌ DB ERROR:", err);
-}
-    return cached.conn;
 
+  globalWithMongoose.mongoose!.conn =
+    await globalWithMongoose.mongoose!.promise;
 
+  return globalWithMongoose.mongoose!.conn;
 }
-export default connectDB

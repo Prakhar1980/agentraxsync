@@ -1,5 +1,11 @@
 (function () {
   function init() {
+    console.log(" Widget Loaded");
+
+    let agentTimer = null;
+    let timerInterval = null;
+    let isAgentMode = false;
+
     const scriptTag =
       document.currentScript ||
       document.querySelector("script[data-owner-id]");
@@ -9,7 +15,7 @@
       window.CHATBOT_OWNER_ID;
 
     if (!ownerId) {
-      console.error("❌ ownerId not found");
+      console.error(" ownerId not found");
       return;
     }
 
@@ -17,7 +23,15 @@
       scriptTag?.getAttribute("data-api-url") ||
       "http://localhost:3000/api/chat";
 
-    // 🔥 SESSION (FIXED)
+    const SOCKET_URL =
+      scriptTag?.getAttribute("data-socket-url") ||
+      "http://localhost:3000";
+
+    /* SESSION  */
+
+    if (window.__agentrax_initialized) return;
+    window.__agentrax_initialized = true;
+
     let sessionId = localStorage.getItem("agentrax_session");
 
     if (!sessionId) {
@@ -25,16 +39,35 @@
       localStorage.setItem("agentrax_session", sessionId);
     }
 
-    /* ================= SOCKET ================= */
- const socket = io("http://localhost:3000");
+    /* SOCKET  */
 
-socket.emit("join", sessionId);
+    let socket;
 
-socket.on("receive_message", (data) => {
-  addMessage(data.text, "bot");
-});
+    if (!window.__agentrax_socket) {
+      socket = io(SOCKET_URL, {
+        transports: ["websocket"],
+        reconnection: true,
+      });
+      window.__agentrax_socket = socket;
 
-    /* ================= UI ================= */
+    } else {
+      socket = window.__agentrax_socket;
+      console.log("♻️ Reusing existing socket");
+    }
+
+    if (!window.__agentrax_joined) {
+      socket.emit("join", {
+        sessionId,
+        role: "user",
+        ownerId,
+      });
+
+      window.__agentrax_joined = true;
+    }
+
+    console.log("🔗 Socket Room:", sessionId);
+
+    /* UI */
 
     const button = document.createElement("div");
     button.innerHTML = "💬";
@@ -77,11 +110,18 @@ socket.on("receive_message", (data) => {
     });
 
     chatBox.innerHTML = `
-      <div style="padding:10px; background:#000; color:#fff;">
-        Support Chat
+      <div id="chat-header" style="padding:10px; background:#000; color:#fff;">
+        AI Support
       </div>
 
       <div id="chat-messages" style="flex:1; padding:10px; overflow-y:auto;"></div>
+
+      <div id="agent-timer" style="
+        display:none;
+        font-size:12px;
+        color:#2563eb;
+        padding:5px 10px;
+      "></div>
 
       <div style="display:flex; border-top:1px solid #ddd;">
         <input id="chat-input" placeholder="Type..." 
@@ -103,20 +143,44 @@ socket.on("receive_message", (data) => {
     const messagesDiv = chatBox.querySelector("#chat-messages");
     const input = chatBox.querySelector("#chat-input");
     const sendBtn = chatBox.querySelector("#chat-send");
+    const headerEl = chatBox.querySelector("#chat-header");
+
+    function setHeader(mode) {
+      if (!headerEl) return;
+      if (mode === "agent") {
+        headerEl.innerText = "Human Support";
+      } else {
+        headerEl.innerText = "AI Support";
+      }
+    }
 
     function addMessage(text, sender) {
       const msg = document.createElement("div");
       msg.style.marginBottom = "8px";
       msg.style.textAlign = sender === "user" ? "right" : "left";
 
+      let bg = "#eee";
+      let color = "#000";
+
+      if (sender === "user") {
+        bg = "#000";
+        color = "#fff";
+      }
+
+      if (sender === "agent") {
+        bg = "#16a34a";
+        color = "#fff";
+      }
+
       msg.innerHTML = `
         <span style="
-          background:${sender === "user" ? "#000" : "#eee"};
-          color:${sender === "user" ? "#fff" : "#000"};
+          background:${bg};
+          color:${color};
           padding:6px 10px;
           border-radius:10px;
           display:inline-block;
           max-width:80%;
+          word-break:break-word;
         ">
           ${text}
         </span>
@@ -125,54 +189,111 @@ socket.on("receive_message", (data) => {
       messagesDiv.appendChild(msg);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
+    /* TIMER */
 
-    /* ================= RECEIVE REAL-TIME ================= */
+    function startAgentTimer(seconds = 120) {
+      const timerEl = document.getElementById("agent-timer");
+      if (!timerEl) return;
 
-    socket.on("receive_message", (msg) => {
-      addMessage(msg.text, msg.role === "human" ? "bot" : msg.role);
-    });
+      agentTimer = seconds;
+      timerEl.style.display = "block";
+      timerEl.innerText = `Connecting to agent... ${agentTimer}s`;
 
-    socket.on("typing", () => {
-      showTyping();
-    });
+      if (timerInterval) clearInterval(timerInterval);
 
-    socket.on("stop_typing", () => {
-      hideTyping();
-    });
+      timerInterval = setInterval(() => {
+        agentTimer--;
 
-    function showTyping() {
-      if (!document.getElementById("typing")) {
-        const t = document.createElement("div");
-        t.id = "typing";
-        t.innerText = "Agent is typing...";
-        t.style.fontSize = "12px";
-        t.style.color = "#666";
-        messagesDiv.appendChild(t);
+        if (agentTimer <= 0) {
+          clearInterval(timerInterval);
+
+          isAgentMode = false;
+          setHeader("ai");
+
+          addMessage("All agents are busy. AI will assist you now.", "bot");
+
+          timerEl.style.display = "none";
+          return;
+        }
+
+        timerEl.innerText = `Connecting to agent... ${agentTimer}s`;
+      }, 1000);
+    }
+
+    function stopAgentTimer() {
+      const timerEl = document.getElementById("agent-timer");
+
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = null;
+      agentTimer = null;
+
+      if (timerEl) timerEl.style.display = "none";
+    }
+
+    /*SOCKET RECEIVE */
+
+    let lastBotMessage = "";
+
+    // prevent duplicate handlers
+    socket.off("receive_message");
+    socket.off("chat_ended_by_agent");
+
+    socket.on("receive_message", (data) => {
+      console.log("📩 RECEIVED:", data);
+
+      const { message, sender } = data || {};
+
+      if (!message) return;
+
+      if (sender === "bot") {
+        if (message === lastBotMessage) return;
+        lastBotMessage = message;
       }
-    }
 
-    function hideTyping() {
-      const t = document.getElementById("typing");
-      if (t) t.remove();
-    }
+      if (sender === "agent") {
+        stopAgentTimer();
+        isAgentMode = true;
+        setHeader("agent");
+      }
 
-    /* ================= SEND MESSAGE ================= */
+      addMessage(message, sender);
+    });
+    socket.on("chat_ended_by_agent", (data) => {
+      stopAgentTimer();
+      isAgentMode = false;
+      setHeader("ai");
+
+      addMessage(
+        data?.message || "Agent ended the chat. AI will assist you now.",
+        "bot"
+      );
+    });
+
+    /* SEND */
+
+    let isSending = false;
 
     async function sendMessage() {
+      if (isSending) return;
+
       const message = input.value.trim();
       if (!message) return;
+
+      isSending = true;
 
       addMessage(message, "user");
       input.value = "";
 
-      // 🔥 REALTIME SEND
-      socket.emit("send_message", {
-        sessionId,
-        message: {
-          role: "user",
-          text: message,
-        },
-      });
+      const typingMsg = document.createElement("div");
+      typingMsg.innerHTML = `<span style="
+        background:#eee;
+        padding:6px 10px;
+        border-radius:10px;
+        display:inline-block;
+      ">Typing...</span>`;
+
+      messagesDiv.appendChild(typingMsg);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
       try {
         const res = await fetch(API_URL, {
@@ -185,29 +306,55 @@ socket.on("receive_message", (data) => {
           }),
         });
 
-        const data = await res.json();
-        
-        if (data.askHuman) {
-          addMessage("👤 Do you want to connect to a human agent? (yes/no)", "bot");
+        let data = {};
+        try {
+          data = await res.json();
+        } catch {
+          data = { reply: "Server error ❌" };
+        }
+
+        typingMsg.remove();
+
+
+if (data.welcomeMessage) {
+  addMessage(data.welcomeMessage, "bot");
 }
 
-        addMessage(data.reply, "bot");
+if (data.agentHintMessage) {
+  addMessage(data.agentHintMessage, "bot");
+}
+        if (data.reply) {
+          if (data.reply !== lastBotMessage) {
+            lastBotMessage = data.reply;
+            addMessage(data.reply, "bot");
+          }
+        }
 
         if (data.escalated) {
-          addMessage("🧑‍💼 Connecting to human agent...", "bot");
+          startAgentTimer(120);
+          socket.emit("request_human", { sessionId, ownerId });
+        } else {
+          stopAgentTimer();
+          isAgentMode = false;
+          setHeader("ai");
         }
       } catch (err) {
+        console.error(err);
+        typingMsg.remove();
         addMessage("Server error ❌", "bot");
       }
-    }
 
+      isSending = false;
+    }
     sendBtn.onclick = sendMessage;
 
-    input.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") sendMessage();
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendMessage();
+      }
     });
   }
-
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {

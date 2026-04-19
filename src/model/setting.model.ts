@@ -5,6 +5,8 @@ interface ISettings {
   businessName: string;
   supportEmail: string;
   knowledge: string;
+  welcomeMessage?: string;
+  agentHintMessage?: string;
 }
 
 const settingSchema = new Schema<ISettings>(
@@ -12,17 +14,29 @@ const settingSchema = new Schema<ISettings>(
     ownerId: {
       type: String,
       required: true,
-      unique: true 
+      unique: true,
     },
+
     businessName: {
       type: String,
       required: true,
     },
+
     supportEmail: {
       type: String,
       required: true,
     },
+
     knowledge: {
+      type: String,
+      default: "",
+    },
+    welcomeMessage: {
+      type: String,
+      default: "",
+    },
+
+    agentHintMessage: {
       type: String,
       default: "",
     },
@@ -31,6 +45,6 @@ const settingSchema = new Schema<ISettings>(
 );
 
 const Settings =
-  models.Settings || model<ISettings>("Settings", settingSchema);  
+  models.Settings || model<ISettings>("Settings", settingSchema);
 
 export default Settings;

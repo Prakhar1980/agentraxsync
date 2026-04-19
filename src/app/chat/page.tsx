@@ -11,15 +11,14 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isEscalated, setIsEscalated] = useState(false); 
 
   const chatRef = useRef<HTMLDivElement>(null);
 
-  // auto scroll
   useEffect(() => {
     chatRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // send message
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -41,11 +40,13 @@ export default function ChatPage() {
         },
         body: JSON.stringify({
           message: userMessage,
-          ownerId: "demo-id", // 🔥 replace later with session userId
+          ownerId: "demo-id",
+          sessionId: "sess_demo_123",
         }),
       });
 
       const data = await res.json();
+      setIsEscalated(data.escalated);
 
       setMessages((prev) => [
         ...prev,
@@ -64,12 +65,16 @@ export default function ChatPage() {
   return (
     <div className="flex flex-col h-screen bg-gray-100">
 
-      {/* HEADER */}
-      <div className="p-4 bg-white shadow font-bold text-lg">
-        SupportSync Chat 🤖
-      </div>
+      <div className="p-4 bg-white shadow font-bold text-lg flex justify-between">
+        <span>SupportSync Chat 🤖</span>
 
-      {/* CHAT AREA */}
+        {/* escalation status */}
+        {isEscalated && (
+          <span className="text-sm text-red-500">
+            Connecting to agent...
+          </span>
+        )}
+      </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
 
         {messages.map((msg, i) => (
@@ -91,7 +96,6 @@ export default function ChatPage() {
           </div>
         ))}
 
-        {/* typing indicator */}
         {loading && (
           <div className="text-sm text-gray-500">AI is typing...</div>
         )}
@@ -99,7 +103,7 @@ export default function ChatPage() {
         <div ref={chatRef} />
       </div>
 
-      {/* INPUT BOX */}
+      {/* INPUT */}
       <div className="p-3 bg-white flex gap-2 border-t">
         <input
           className="flex-1 border rounded-xl px-4 py-2"
@@ -112,6 +116,7 @@ export default function ChatPage() {
         <button
           onClick={sendMessage}
           className="bg-black text-white px-4 py-2 rounded-xl"
+          disabled={loading}
         >
           Send
         </button>
