@@ -35,11 +35,11 @@ const router = useRouter();
   };
 
   const handleCTA = () => {
-    if (email) window.location.href = "/dashboard";
+    if (ownerId) window.location.href = "/dashboard";
     else handleLogin();
   };
 
-  const firstLetter = email ? email[0].toUpperCase() : "";
+const firstLetter = ownerId ? ownerId[0].toUpperCase() : "";
 
 useEffect(() => {
   const params = new URLSearchParams(window.location.search);
@@ -91,7 +91,7 @@ useEffect(() => {
         Support<span className="text-indigo-600">Sync</span>
       </h1>
     </div>
-    {email ? (
+    {ownerId ?  (
       <div className="relative" ref={dropdownRef}>
         <div
           onClick={() => setOpen(!open)}
@@ -113,7 +113,7 @@ useEffect(() => {
                          rounded-2xl shadow-xl p-2"
             >
               <div className="px-3 py-2 text-xs text-gray-500 border-b">
-                {email}
+                {ownerId}
               </div>
 
               <button
@@ -159,7 +159,7 @@ useEffect(() => {
 
           <motion.div {...fadeUp} className="mt-8 flex gap-4">
             <button onClick={handleCTA} className="px-6 py-3 bg-indigo-600 text-white rounded-xl">
-              {email ? "Start Building" : "Get Started"}
+             {ownerId ? "Start Building" : "Get Started"}
             </button>
 
             <button
@@ -348,7 +348,7 @@ useEffect(() => {
           </p>
 
           <motion.button onClick={handleCTA} className="px-8 py-4 bg-indigo-600 text-white rounded-xl text-lg">
-            {email ? "Go to Dashboard" : "Get Started Free"}
+            {ownerId ? "Start Building" : "Get Started"}
           </motion.button>
         </motion.div>
       </section>
