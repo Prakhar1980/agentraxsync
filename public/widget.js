@@ -1,6 +1,21 @@
 (function () {
-  function init() {
+async function loadSocketIO() {
+    if (window.io) return;
+
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://cdn.socket.io/4.7.5/socket.io.min.js";
+      script.onload = resolve;
+      script.onerror = () => reject(new Error("Failed to load Socket.IO client"));
+      document.head.appendChild(script);
+    });
+  }
+
+  async function init() {
     console.log(" Widget Loaded");
+
+  
+    await loadSocketIO();
 
     let agentTimer = null;
     let timerInterval = null;
@@ -27,7 +42,7 @@
       scriptTag?.getAttribute("data-socket-url") ||
       "http://localhost:3000";
 
-    /* SESSION  */
+    /* SESSION */
 
     if (window.__agentrax_initialized) return;
     window.__agentrax_initialized = true;
@@ -39,17 +54,17 @@
       localStorage.setItem("agentrax_session", sessionId);
     }
 
-    /* SOCKET  */
+    /* SOCKET */
 
     let socket;
 
     if (!window.__agentrax_socket) {
-      socket = io(SOCKET_URL, {
+      socket = window.io(SOCKET_URL, {
         transports: ["websocket"],
         reconnection: true,
       });
-      window.__agentrax_socket = socket;
 
+      window.__agentrax_socket = socket;
     } else {
       socket = window.__agentrax_socket;
       console.log("♻️ Reusing existing socket");
@@ -189,6 +204,7 @@
       messagesDiv.appendChild(msg);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
+
     /* TIMER */
 
     function startAgentTimer(seconds = 120) {
@@ -230,11 +246,10 @@
       if (timerEl) timerEl.style.display = "none";
     }
 
-    /*SOCKET RECEIVE */
+    /* SOCKET RECEIVE */
 
     let lastBotMessage = "";
 
-    // prevent duplicate handlers
     socket.off("receive_message");
     socket.off("chat_ended_by_agent");
 
@@ -258,6 +273,7 @@
 
       addMessage(message, sender);
     });
+
     socket.on("chat_ended_by_agent", (data) => {
       stopAgentTimer();
       isAgentMode = false;
@@ -310,19 +326,19 @@
         try {
           data = await res.json();
         } catch {
-          data = { reply: "Server error ❌" };
+          data = { reply: "Server error " };
         }
 
         typingMsg.remove();
 
+        if (data.welcomeMessage) {
+          addMessage(data.welcomeMessage, "bot");
+        }
 
-if (data.welcomeMessage) {
-  addMessage(data.welcomeMessage, "bot");
-}
+        if (data.agentHintMessage) {
+          addMessage(data.agentHintMessage, "bot");
+        }
 
-if (data.agentHintMessage) {
-  addMessage(data.agentHintMessage, "bot");
-}
         if (data.reply) {
           if (data.reply !== lastBotMessage) {
             lastBotMessage = data.reply;
@@ -341,11 +357,12 @@ if (data.agentHintMessage) {
       } catch (err) {
         console.error(err);
         typingMsg.remove();
-        addMessage("Server error ❌", "bot");
+        addMessage("Server error ", "bot");
       }
 
       isSending = false;
     }
+
     sendBtn.onclick = sendMessage;
 
     input.addEventListener("keydown", (e) => {
@@ -355,8 +372,11 @@ if (data.agentHintMessage) {
       }
     });
   }
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
+    document.addEventListener("DOMContentLoaded", () => {
+      init();
+    });
   } else {
     init();
   }
