@@ -75,7 +75,7 @@ app.prepare()
       });
     });
 
-    server.all("*", (req, res) => handle(req, res));
+   server.all("/*", (req, res) => handle(req, res));
 
     httpServer.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
