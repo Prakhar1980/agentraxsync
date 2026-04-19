@@ -6,9 +6,11 @@ export function initSocket(server) {
   if (!io) {
     io = new Server(server, {
       cors: {
-        origin: "*",
-        methods: ["GET", "POST"],
-      },
+  origin: [
+    "https://agentraxsync.onrender.com"
+  ],
+  methods: ["GET", "POST"]
+  },
     });
 
     global.io = io;
