@@ -1,5 +1,6 @@
 import connectDB from "@/lib/db";
 import Chat from "@/model/chat.model";
+import { getsession } from "@/lib/getsession";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -7,16 +8,21 @@ export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   try {
+    //  SESSION CHECK (IMPORTANT)
+    const session = await getsession();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const ownerId = session.user.id;
+
     await connectDB();
-
-    const ownerId = req.nextUrl.searchParams.get("ownerId");
-
-    const filter: any = ownerId ? { ownerId } : {};
 
     // 🔥 Mark inactive users offline (10 min)
     await Chat.updateMany(
       {
-        ...filter,
+        ownerId,
         lastSeen: { $lt: new Date(Date.now() - 10 * 60 * 1000) },
         ended: { $ne: true },
         status: { $nin: ["WAITING_FOR_AGENT", "HUMAN"] },
@@ -30,14 +36,14 @@ export async function GET(req: NextRequest) {
 
     // CLEAN ENDED chats older than 24h
     await Chat.deleteMany({
-      ...filter,
+      ownerId,
       ended: true,
       updatedAt: { $lt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
     });
 
-    // 🔥 Return escalated chats
+    //  Return escalated chats
     const chats = await Chat.find({
-      ...filter,
+      ownerId,
       ended: { $ne: true },
       $or: [
         { status: "WAITING_FOR_AGENT" },
