@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getsession } from "@/lib/getsession";
 import DashboardClient from "../components/DashboardClient";
 
@@ -6,7 +8,5 @@ export default async function Page() {
 
   const ownerId = session?.user?.id || null;
 
-  return (
-    <DashboardClient ownerId={ownerId} />
-  );
-}  
+  return <DashboardClient ownerId={ownerId} />;
+}
