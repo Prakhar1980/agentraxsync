@@ -5,6 +5,13 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
 
+  
+if (!process.env.NEXT_PUBLIC_APP_URL) {
+  return NextResponse.json(
+    { error: "APP URL missing" },
+    { status: 500 }
+  );
+}
   const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback`;
 
   if (!code) {
@@ -21,7 +28,7 @@ const response = NextResponse.redirect(
   response.cookies.set("access_token", session.accessToken, {
     httpOnly: true,
     maxAge: 60 * 60 * 24,
-    secure: false,
+    secure: true,
     path: "/",
   });
 
