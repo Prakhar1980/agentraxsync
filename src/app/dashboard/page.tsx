@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getsession } from "@/lib/getsession";
 import { redirect } from "next/navigation";
 import DashboardClient from "../components/DashboardClient";
