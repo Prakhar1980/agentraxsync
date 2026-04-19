@@ -2,6 +2,7 @@ import connectDB from "@/lib/db";
 import Chat from "@/model/chat.model";
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
@@ -9,31 +10,32 @@ export async function GET(req: NextRequest) {
     await connectDB();
 
     const ownerId = req.nextUrl.searchParams.get("ownerId");
-    const filter: any = ownerId ? { ownerId } : {};
-  await Chat.updateMany(
-  {
-    ...filter,
-    lastSeen: { $lt: new Date(Date.now() - 10 * 60 * 1000) },
-    ended: { $ne: true },
-    status: { $nin: ["WAITING_FOR_AGENT", "HUMAN"] }, // ✅ FIX
-  },
-  {
-    $set: {
-      isOnline: false,
-      ended: true,
-      status: "ENDED",
-    },
-  }
-);
 
-    // CLEAN ENDED (24h)
+    const filter: any = ownerId ? { ownerId } : {};
+
+    // 🔥 Mark inactive users offline (10 min)
+    await Chat.updateMany(
+      {
+        ...filter,
+        lastSeen: { $lt: new Date(Date.now() - 10 * 60 * 1000) },
+        ended: { $ne: true },
+        status: { $nin: ["WAITING_FOR_AGENT", "HUMAN"] },
+      },
+      {
+        $set: {
+          isOnline: false,
+        },
+      }
+    );
+
+    // CLEAN ENDED chats older than 24h
     await Chat.deleteMany({
       ...filter,
       ended: true,
       updatedAt: { $lt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
     });
 
-    // IMPORTANT: show all escalations
+    // 🔥 Return escalated chats
     const chats = await Chat.find({
       ...filter,
       ended: { $ne: true },
@@ -41,7 +43,7 @@ export async function GET(req: NextRequest) {
         { status: "WAITING_FOR_AGENT" },
         { status: "HUMAN" },
         { awaitingConfirmation: true },
-        { escalated: true }, // 🔥 MAIN FIX
+        { escalated: true },
       ],
     })
       .sort({ lastSeen: -1 })
