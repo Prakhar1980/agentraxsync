@@ -84,4 +84,4 @@ app.prepare()
   .catch((err) => {
     console.error("❌ Server failed to start:", err);
     process.exit(1);
-  });git add server.js
+  });
