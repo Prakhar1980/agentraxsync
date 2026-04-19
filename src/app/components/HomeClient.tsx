@@ -7,7 +7,7 @@ import Badge from "@/app/components/Badge";
 import Image from "next/image";
 
 
-function HomeClient({ email }: { email?: string }) {
+function HomeClient({ ownerId }: { ownerId?: string })  {
 
   const [loading, setLoading] = useState(false);
   const [agentTimer, setAgentTimer] = useState<number | null>(null);  
