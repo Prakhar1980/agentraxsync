@@ -276,7 +276,7 @@ async function loadSocketIO() {
       addMessage(message, sender);
     });
 
-    socket.on("agent_joined", (data) => {
+    socket.on("agent_joined", () => {
       stopAgentTimer();
       isAgentMode = true;
       setHeader("agent");
@@ -284,12 +284,7 @@ async function loadSocketIO() {
       if (agentJoinedNoticeShown) return;
 
       agentJoinedNoticeShown = true;
-      const notice =
-        data?.name
-          ? `${data.name} joined the chat. Agent is handling your chat. Please wait...`
-          : "Agent is handling your chat. Please wait...";
-
-      addMessage(notice, "bot");
+      addMessage("Agent is handling your chat. Please wait...", "bot");
     });
 
     socket.on("chat_ended_by_agent", (data) => {
