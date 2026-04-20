@@ -32,7 +32,13 @@ export async function POST(req: Request) {
     await connectDB();
 
     const body = await req.json();
-   const { ownerId, buisenessName, supportEmail, knowledge } = body;
+    const ownerId = body?.ownerId?.toString?.().trim?.();
+    const businessName =
+      body?.businessName?.toString?.().trim?.() ||
+      body?.buisenessName?.toString?.().trim?.() ||
+      "";
+    const supportEmail = body?.supportEmail?.toString?.().trim?.() || "";
+    const knowledge = body?.knowledge?.toString?.() || "";
 
     if (!ownerId) {
       return NextResponse.json(
@@ -41,10 +47,21 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!businessName || !supportEmail) {
+      return NextResponse.json(
+        { error: "businessName and supportEmail are required" },
+        { status: 400 }
+      );
+    }
+
     const settings = await Settings.findOneAndUpdate(
       { ownerId },
-      { ownerId, buisenessName, supportEmail, knowledge },
-      { returnDocument: "after", upsert: true }
+      { ownerId, businessName, supportEmail, knowledge },
+      {
+        returnDocument: "after",
+        upsert: true,
+        runValidators: true,
+      }
     );
 
     return NextResponse.json(settings);

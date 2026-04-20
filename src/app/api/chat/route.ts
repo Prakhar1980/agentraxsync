@@ -108,12 +108,29 @@ export async function POST(req: NextRequest) {
     const message = body?.message?.toString?.().trim?.();
     const ownerId = body?.ownerId?.toString?.().trim?.();
     const sessionId = body?.sessionId?.toString?.().trim?.();
+    const now = new Date();
 
     if (!message || !ownerId || !sessionId) {
       return setCors(
         NextResponse.json({ reply: "Missing fields" }, { status: 400 })
       );
     }
+
+    await Chat.updateOne(
+      { ownerId, sessionId },
+      {
+        $setOnInsert: {
+          ownerId,
+          sessionId,
+        },
+        $set: {
+          isOnline: true,
+          ended: false,
+          lastSeen: now,
+        },
+      },
+      { upsert: true }
+    );
 
     let settings = settingsCache[ownerId]?.data;
     const cachedAt = settingsCache[ownerId]?.cachedAt || 0;

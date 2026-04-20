@@ -29,6 +29,9 @@ export default function ChatClient() {
   useEffect(() => {
     if (!id) return;
     load();
+
+    const interval = setInterval(load, 3000);
+    return () => clearInterval(interval);
   }, [id]);
 
   useEffect(() => {
@@ -42,7 +45,7 @@ export default function ChatClient() {
     setSocket(s);
 
     s.emit("join", {
-      sessionId: chat.sessionId,
+      sessionId: chat.sessionId?.trim(),
       role: "agent",
       agentName,
       ownerId: chat?.ownerId,
@@ -51,6 +54,7 @@ export default function ChatClient() {
     s.on("receive_message", (data: any) => {
       setChat((prev: any) => ({
         ...prev,
+        isOnline: true,
         messages: [
           ...(prev?.messages || []),
           {
@@ -100,7 +104,7 @@ export default function ChatClient() {
 
     try {
       socket?.emit("send_message", {
-        sessionId: chat.sessionId,
+        sessionId: chat.sessionId.trim(),
         message,
         sender: "agent",
         ownerId: chat.ownerId,
@@ -109,7 +113,7 @@ export default function ChatClient() {
       await axios.post("/api/support/inbox/reply", {
         chatId: id,
         message,
-        sessionId: chat?.sessionId,
+        sessionId: chat?.sessionId?.trim(),
         skipRealtime: true,
       });
 

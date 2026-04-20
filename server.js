@@ -27,44 +27,61 @@ app.prepare()
       console.log("⚡ Connected:", socket.id);
 
       socket.on("join", ({ sessionId, role, agentName, ownerId }) => {
-        if (!sessionId || !role) return;
+        const roomId = sessionId?.toString?.().trim?.();
+        const normalizedOwnerId = ownerId?.toString?.().trim?.();
 
-        socket.join(sessionId);
+        if (!roomId || !role) return;
 
-        if (ownerId) {
-          socket.join(`owner:${ownerId}`);
+        socket.join(roomId);
+        socket.data.sessionId = roomId;
+        socket.data.ownerId = normalizedOwnerId || null;
+        socket.data.role = role;
+
+        console.log(`➡ ${role} joined room: ${roomId}`);
+
+        if (normalizedOwnerId) {
+          socket.join(`owner:${normalizedOwnerId}`);
         }
 
         if (role === "agent") {
-          io.to(sessionId).emit("agent_joined", {
+          io.to(roomId).emit("agent_joined", {
             name: agentName || "Support Agent",
           });
         }
       });
 
       socket.on("request_human", ({ sessionId, ownerId }) => {
-        if (!sessionId || !ownerId) return;
+        const roomId = sessionId?.toString?.().trim?.();
+        const normalizedOwnerId = ownerId?.toString?.().trim?.();
 
-        io.to(`owner:${ownerId}`).emit("new_chat_request", {
-          sessionId,
-          ownerId,
+        if (!roomId || !normalizedOwnerId) return;
+
+        io.to(`owner:${normalizedOwnerId}`).emit("new_chat_request", {
+          sessionId: roomId,
+          ownerId: normalizedOwnerId,
         });
       });
 
       socket.on("agent_accept", ({ sessionId, agentName }) => {
-        if (!sessionId) return;
+        const roomId = sessionId?.toString?.().trim?.();
 
-        socket.join(sessionId);
+        if (!roomId) return;
 
-        io.to(sessionId).emit("agent_joined", {
+        socket.join(roomId);
+
+        io.to(roomId).emit("agent_joined", {
           name: agentName || "Support Agent",
         });
       });
 
       socket.on("send_message", ({ sessionId, message, sender }) => {
-        if (!sessionId || !message || !sender) return;
+        const roomId = sessionId?.toString?.().trim?.();
 
-        io.to(sessionId).emit("receive_message", {
+        if (!roomId || !message || !sender) return;
+
+        console.log(`📨 ${sender} -> ${roomId}`);
+
+        io.to(roomId).emit("receive_message", {
           message,
           sender,
         });

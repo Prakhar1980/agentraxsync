@@ -40,7 +40,7 @@ async function loadSocketIO() {
 
     const SOCKET_URL =
       scriptTag?.getAttribute("data-socket-url") ||
-      "http://localhost:3000";
+      new URL(API_URL, window.location.href).origin;
 
     /* SESSION */
 
@@ -72,7 +72,7 @@ async function loadSocketIO() {
 
     if (!window.__agentrax_joined) {
       socket.emit("join", {
-        sessionId,
+        sessionId: sessionId.trim(),
         role: "user",
         ownerId,
       });
@@ -318,7 +318,7 @@ async function loadSocketIO() {
           body: JSON.stringify({
             message,
             ownerId,
-            sessionId,
+            sessionId: sessionId.trim(),
           }),
         });
 
@@ -348,7 +348,7 @@ async function loadSocketIO() {
 
         if (data.escalated) {
           startAgentTimer(120);
-          socket.emit("request_human", { sessionId, ownerId });
+          socket.emit("request_human", { sessionId: sessionId.trim(), ownerId });
         } else {
           stopAgentTimer();
           isAgentMode = false;
