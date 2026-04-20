@@ -94,25 +94,24 @@ export default function ChatClient() {
   };
 
   const sendReply = async () => {
-    if (!msg.trim()) return;
+    if (!msg.trim() || !chat?.sessionId || !chat?.ownerId) return;
+
+    const message = msg.trim();
 
     try {
-      await axios.post("/api/support/inbox/reply", {
-        chatId: id,
-        message: msg,
-        sessionId: chat?.sessionId,
+      socket?.emit("send_message", {
+        sessionId: chat.sessionId,
+        message,
+        sender: "agent",
+        ownerId: chat.ownerId,
       });
 
-      setChat((prev: any) => ({
-        ...prev,
-        messages: [
-          ...(prev?.messages || []),
-          {
-            role: "agent",
-            text: msg,
-          },
-        ],
-      }));
+      await axios.post("/api/support/inbox/reply", {
+        chatId: id,
+        message,
+        sessionId: chat?.sessionId,
+        skipRealtime: true,
+      });
 
       setMsg("");
     } catch (err) {

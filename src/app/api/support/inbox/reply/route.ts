@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
     const chatId = body?.chatId?.toString?.().trim?.();
     const message = body?.message?.toString?.().trim?.();
     const sessionId = body?.sessionId?.toString?.().trim?.();
+    const skipRealtime = Boolean(body?.skipRealtime);
 
     if (!chatId || !message || !sessionId) {
       return NextResponse.json({ error: "missing fields" }, { status: 400 });
@@ -61,10 +62,12 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    io.to(sessionId).emit("receive_message", {
-      message,
-      sender: "agent",
-    });
+    if (!skipRealtime) {
+      io.to(sessionId).emit("receive_message", {
+        message,
+        sender: "agent",
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {
