@@ -249,8 +249,10 @@ async function loadSocketIO() {
     /* SOCKET RECEIVE */
 
     let lastBotMessage = "";
+    let agentJoinedNoticeShown = false;
 
     socket.off("receive_message");
+    socket.off("agent_joined");
     socket.off("chat_ended_by_agent");
 
     socket.on("receive_message", (data) => {
@@ -274,9 +276,26 @@ async function loadSocketIO() {
       addMessage(message, sender);
     });
 
+    socket.on("agent_joined", (data) => {
+      stopAgentTimer();
+      isAgentMode = true;
+      setHeader("agent");
+
+      if (agentJoinedNoticeShown) return;
+
+      agentJoinedNoticeShown = true;
+      const notice =
+        data?.name
+          ? `${data.name} joined the chat. Agent is handling your chat. Please wait...`
+          : "Agent is handling your chat. Please wait...";
+
+      addMessage(notice, "bot");
+    });
+
     socket.on("chat_ended_by_agent", (data) => {
       stopAgentTimer();
       isAgentMode = false;
+      agentJoinedNoticeShown = false;
       setHeader("ai");
 
       addMessage(
@@ -340,7 +359,12 @@ async function loadSocketIO() {
         }
 
         if (data.reply) {
-          if (data.reply !== lastBotMessage) {
+          const isAgentHandlingReply =
+            data.reply === "Agent is handling your chat. Please wait...";
+
+          if (isAgentHandlingReply && isAgentMode) {
+            lastBotMessage = data.reply;
+          } else if (data.reply !== lastBotMessage) {
             lastBotMessage = data.reply;
             addMessage(data.reply, "bot");
           }
