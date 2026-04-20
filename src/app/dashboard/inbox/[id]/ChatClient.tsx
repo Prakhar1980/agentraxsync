@@ -11,6 +11,7 @@ export default function ChatClient() {
   const [chat, setChat] = useState<any>(null);
   const [msg, setMsg] = useState("");
   const [connected, setConnected] = useState(false);
+  const [ending, setEnding] = useState(false);
   const [agentName] = useState("Advik Support");
   const [socket, setSocket] = useState<any>(null);
 
@@ -80,6 +81,25 @@ export default function ChatClient() {
       }));
     });
 
+    s.on("chat_ended_by_agent", (data: any) => {
+      setConnected(false);
+      setChat((prev: any) => ({
+        ...prev,
+        ended: true,
+        status: "AI",
+        escalated: false,
+        awaitingConfirmation: false,
+        isOnline: false,
+        messages: [
+          ...(prev?.messages || []),
+          {
+            role: "bot",
+            text: data?.message || "Agent ended the chat. AI will assist you now.",
+          },
+        ],
+      }));
+    });
+
     return () => {
       s.disconnect();
     };
@@ -98,7 +118,7 @@ export default function ChatClient() {
   };
 
   const sendReply = async () => {
-    if (!msg.trim() || !chat?.sessionId || !chat?.ownerId) return;
+    if (!msg.trim() || !chat?.sessionId || !chat?.ownerId || chat?.ended) return;
 
     const message = msg.trim();
 
@@ -123,6 +143,34 @@ export default function ChatClient() {
     }
   };
 
+  const endChat = async () => {
+    if (!chat?.sessionId || !chat?.ownerId || chat?.ended || ending) return;
+
+    try {
+      setEnding(true);
+
+      await axios.post("/api/support/chat/end", {
+        sessionId: chat.sessionId.trim(),
+        ownerId: chat.ownerId,
+      });
+
+      setConnected(false);
+      setMsg("");
+      setChat((prev: any) => ({
+        ...prev,
+        ended: true,
+        status: "AI",
+        escalated: false,
+        awaitingConfirmation: false,
+        isOnline: false,
+      }));
+    } catch (err) {
+      console.error("End chat error:", err);
+    } finally {
+      setEnding(false);
+    }
+  };
+
   return (
     <div className="p-6">
       <h1 className="font-bold text-lg">Support Chat</h1>
@@ -140,9 +188,20 @@ export default function ChatClient() {
       {!connected && (
         <button
           onClick={acceptChat}
+          disabled={chat?.ended}
           className="mt-3 bg-green-600 text-white px-4 py-2 rounded"
         >
           Accept Chat
+        </button>
+      )}
+
+      {connected && !chat?.ended && (
+        <button
+          onClick={endChat}
+          disabled={ending}
+          className="mt-3 ml-3 bg-red-600 text-white px-4 py-2 rounded disabled:opacity-60"
+        >
+          {ending ? "Ending..." : "End Chat"}
         </button>
       )}
 
@@ -174,9 +233,14 @@ export default function ChatClient() {
           value={msg}
           onChange={(e) => setMsg(e.target.value)}
           className="border p-2 flex-1 rounded"
-          placeholder="Reply as human..."
+          placeholder={chat?.ended ? "Chat closed" : "Reply as human..."}
+          disabled={chat?.ended}
         />
-        <button onClick={sendReply} className="bg-black text-white px-4 rounded">
+        <button
+          onClick={sendReply}
+          disabled={chat?.ended}
+          className="bg-black text-white px-4 rounded disabled:opacity-60"
+        >
           Send
         </button>
       </div>
