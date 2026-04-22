@@ -163,4 +163,4 @@ Required environment variables on Render:
 
 ## Author
 
-Built for the SupportSync / AgentraXSync chatbot workflow project.
+Created for AgentraXSync AI — an intelligent chatbot platform designed to automate support, manage conversations, and seamlessly connect users with human agents.
