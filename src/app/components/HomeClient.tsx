@@ -1,26 +1,22 @@
 'use client'
+
 import axios from "axios";
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation"; 
+import { useRouter } from "next/navigation";
 import Badge from "@/app/components/Badge";
-import Image from "next/image";
 
-
-function HomeClient({ ownerId }: { ownerId?: string })  {
-
+function HomeClient({ ownerId }: { ownerId?: string }) {
   const [loading, setLoading] = useState(false);
-  const [agentTimer, setAgentTimer] = useState<number | null>(null);  
- 
-
- const handleLogin = () => {
-  setLoading(true);
-  window.location.href = "/api/auth/login";  
-};
-
-const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [showIntroGlow, setShowIntroGlow] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  const handleLogin = () => {
+    setLoading(true);
+    window.location.href = "/api/auth/login";
+  };
 
   const handleLogout = async () => {
     try {
@@ -30,361 +26,482 @@ const router = useRouter();
       console.error("Logout failed", err);
     }
   };
-  const handleDashboard = () => {
-    window.location.href = "/dashboard";
-  };
 
   const handleCTA = () => {
     if (ownerId) window.location.href = "/dashboard";
     else handleLogin();
   };
 
-const firstLetter = ownerId ? ownerId[0].toUpperCase() : "";
+  const firstLetter = ownerId ? ownerId[0].toUpperCase() : "";
 
-useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
 
-  if (params.get("loggedIn") === "1") {
-    window.history.replaceState({}, "", "/");
-    window.location.reload(); 
-  }
-}, []);
+    if (params.get("loggedIn") === "1") {
+      window.history.replaceState({}, "", "/");
+      window.location.reload();
+    }
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShowIntroGlow(false), 2200);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const fadeUp = {
-    initial: { opacity: 0, y: 40 },
+    initial: { opacity: 0, y: 32 },
     whileInView: { opacity: 1, y: 0 },
-    transition: { duration: 0.5 },
-    viewport: { once: true }
+    transition: { duration: 0.55 },
+    viewport: { once: true, amount: 0.25 },
   };
+
+  const featureCards = [
+    {
+      title: "AI That Replies First",
+      body: "Answer common support questions instantly using your business context and saved knowledge.",
+      accent: "from-amber-200/50 via-orange-100/30 to-transparent",
+    },
+    {
+      title: "Human Handoff That Feels Smooth",
+      body: "Escalate frustrated or high-value conversations to a real agent without breaking the flow.",
+      accent: "from-sky-200/50 via-cyan-100/30 to-transparent",
+    },
+    {
+      title: "Widget Ready for Any Site",
+      body: "Drop one script into your website and launch a real support assistant in minutes.",
+      accent: "from-emerald-200/50 via-lime-100/30 to-transparent",
+    },
+  ];
+
+  const stats = [
+    { value: "24/7", label: "AI support coverage" },
+    { value: "<2s", label: "Fast first response" },
+    { value: "Live", label: "Human takeover when needed" },
+  ];
 
   return (
     <>
-    <div className="min-h-screen bg-gradient-to-br from-white via-zinc-50 to-zinc-100 text-zinc-900">
-<motion.header
-  initial={{ y: -20, opacity: 0 }}
-  animate={{ y: 0, opacity: 1 }}
-  className="fixed top-0 left-0 w-full z-50 bg-white/60 backdrop-blur-2xl border-b border-gray-200/60"
->
-  <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-4">
-    <div className="flex items-center gap-3 cursor-pointer group">
+      <div className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,#fff7ed_0%,#f8fafc_34%,#dbeafe_68%,#f8fafc_100%)] text-slate-950">
+        <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+          <AnimatePresence>
+            {showIntroGlow && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.6 }}
+                  animate={{ opacity: 0.75, scale: 1.05 }}
+                  exit={{ opacity: 0, scale: 1.2 }}
+                  transition={{ duration: 1.2, ease: "easeOut" }}
+                  className="absolute left-[8%] top-20 h-40 w-40 rounded-full bg-orange-300/35 blur-3xl"
+                />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 0.65, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.15 }}
+                  transition={{ duration: 1.35, delay: 0.15, ease: "easeOut" }}
+                  className="absolute right-[10%] top-28 h-52 w-52 rounded-full bg-sky-300/30 blur-3xl"
+                />
+              </>
+            )}
+          </AnimatePresence>
 
-      <div className="relative">
-        <img
-          src="/logo.png"
-          alt="Logo"
-          className="w-12 h-12 object-contain transition-all duration-500 
-                     group-hover:scale-110 group-hover:rotate-3 
-                     drop-shadow-sm"
-        />
-      </div>
-      <h1 className="text-xl font-semibold tracking-tight text-gray-900">
-        Support<span className="text-indigo-600">Sync</span>
-      </h1>
-    </div>
-    {ownerId ?  (
-      <div className="relative" ref={dropdownRef}>
-        <div
-          onClick={() => setOpen(!open)}
-          className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-900 to-gray-700 text-white 
-                     flex items-center justify-center cursor-pointer shadow-md 
-                     hover:scale-105 transition"
+          <motion.div
+            animate={{ x: [0, 30, -10, 0], y: [0, -20, 10, 0] }}
+            transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute left-[-8rem] top-[-6rem] h-80 w-80 rounded-full bg-orange-300/30 blur-3xl"
+          />
+          <motion.div
+            animate={{ x: [0, -50, 10, 0], y: [0, 20, -30, 0] }}
+            transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute right-[-6rem] top-16 h-[26rem] w-[26rem] rounded-full bg-sky-300/30 blur-3xl"
+          />
+          <motion.div
+            animate={{ x: [0, 25, 0], y: [0, -25, 0] }}
+            transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute bottom-[-8rem] left-1/3 h-72 w-72 rounded-full bg-emerald-300/20 blur-3xl"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.55)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.55)_1px,transparent_1px)] bg-[size:72px_72px] opacity-40" />
+        </div>
+
+        <motion.header
+          initial={{ y: -18, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="fixed top-0 left-0 z-50 w-full border-b border-white/40 bg-white/45 backdrop-blur-2xl"
         >
-          {firstLetter}
-        </div>
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+            <div className="group flex cursor-pointer items-center gap-3">
+              <div className="rounded-2xl border border-white/60 bg-white/80 p-2 shadow-[0_10px_30px_rgba(15,23,42,0.08)] transition duration-500 group-hover:-translate-y-0.5 group-hover:rotate-3">
+                <img
+                  src="/logo.png"
+                  alt="Logo"
+                  className="h-10 w-10 object-contain"
+                />
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.35em] text-slate-500">
+                  Customer Support OS
+                </p>
+                <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+                  Support<span className="text-orange-500">Sync</span>
+                </h1>
+              </div>
+            </div>
 
-        <AnimatePresence>
-          {open && (
+            {ownerId ? (
+              <div className="relative" ref={dropdownRef}>
+                <div
+                  onClick={() => setOpen(!open)}
+                  className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-slate-900 text-white shadow-lg transition hover:scale-105"
+                >
+                  {firstLetter}
+                </div>
+
+                <AnimatePresence>
+                  {open && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.18 }}
+                      className="absolute right-0 mt-3 w-56 rounded-3xl border border-white/70 bg-white/90 p-2 shadow-2xl backdrop-blur-xl"
+                    >
+                      <div className="border-b border-slate-100 px-3 py-2 text-xs text-slate-500">
+                        {ownerId}
+                      </div>
+                      <button
+                        onClick={() => router.push("/dashboard")}
+                        className="mt-1 w-full rounded-2xl px-3 py-2 text-left transition hover:bg-slate-100"
+                      >
+                        Dashboard
+                      </button>
+                      <button
+                        onClick={handleLogout}
+                        className="w-full rounded-2xl px-3 py-2 text-left text-red-600 transition hover:bg-red-50"
+                      >
+                        Logout
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <button
+                onClick={handleLogin}
+                disabled={loading}
+                className="rounded-full bg-slate-950 px-5 py-2.5 text-white shadow-lg transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? "Redirecting..." : "Login"}
+              </button>
+            )}
+          </div>
+        </motion.header>
+
+        <main className="mx-auto max-w-7xl px-6 pb-20 pt-32">
+          <section className="grid items-center gap-14 lg:grid-cols-[1.08fr_0.92fr]">
+            <div>
+              <motion.div
+                {...fadeUp}
+                className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/75 px-4 py-2 text-sm text-slate-700 shadow-[0_12px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl"
+              >
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                AI-first support with instant human handoff
+              </motion.div>
+
+              <motion.h2
+                {...fadeUp}
+                className="max-w-3xl text-4xl font-semibold leading-[0.98] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl"
+              >
+                Make your support feel
+                <span className="block bg-gradient-to-r from-orange-500 via-amber-500 to-sky-500 bg-clip-text text-transparent">
+                  premium, fast, and always on.
+                </span>
+              </motion.h2>
+
+              <motion.p
+                {...fadeUp}
+                className="mt-5 max-w-xl text-base leading-7 text-slate-600 sm:text-lg"
+              >
+                SupportSync handles routine conversations with AI, detects when a
+                customer needs a real person, and smoothly hands the chat to your
+                team in real time.
+              </motion.p>
+
+              <motion.div
+                {...fadeUp}
+                className="mt-9 flex flex-col gap-4 sm:flex-row"
+              >
+                <button
+                  onClick={handleCTA}
+                  className="rounded-2xl bg-slate-950 px-7 py-4 text-base font-medium text-white shadow-[0_18px_40px_rgba(15,23,42,0.22)] transition hover:-translate-y-0.5 hover:bg-slate-800"
+                >
+                  {ownerId ? "Open Dashboard" : "Get Started"}
+                </button>
+                <button
+                  onClick={() =>
+                    document
+                      .getElementById("features")
+                      ?.scrollIntoView({ behavior: "smooth" })
+                  }
+                  className="rounded-2xl border border-slate-200 bg-white/75 px-7 py-4 text-base font-medium text-slate-700 shadow-[0_12px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-slate-300"
+                >
+                  Explore Features
+                </button>
+              </motion.div>
+
+              <motion.div
+                {...fadeUp}
+                className="mt-10 grid gap-4 sm:grid-cols-3"
+              >
+                {stats.map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="rounded-3xl border border-white/70 bg-white/70 p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl"
+                  >
+                    <p className="text-3xl font-semibold tracking-tight text-slate-950">
+                      {stat.value}
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">
+                      {stat.label}
+                    </p>
+                  </div>
+                ))}
+              </motion.div>
+            </div>
+
             <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="absolute right-0 mt-3 w-52 bg-white/90 backdrop-blur-xl border border-gray-200 
-                         rounded-2xl shadow-xl p-2"
+              initial={{ opacity: 0, x: 40, y: 18 }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
+              transition={{ duration: 0.75, ease: "easeOut" }}
+              className="relative mx-auto w-full max-w-[29rem]"
             >
-              <div className="px-3 py-2 text-xs text-gray-500 border-b">
-                {ownerId}
+              <div className="absolute -left-8 top-8 h-28 w-28 rounded-[2rem] bg-orange-300/30 blur-2xl" />
+              <div className="absolute -right-6 bottom-8 h-36 w-36 rounded-full bg-sky-300/25 blur-2xl" />
+
+              <div className="relative rounded-[2rem] border border-white/70 bg-white/75 p-4 shadow-[0_30px_90px_rgba(15,23,42,0.18)] backdrop-blur-2xl">
+                <div className="rounded-[1.6rem] border border-slate-100 bg-slate-950 p-5 text-white shadow-inner">
+                  <div className="mb-5 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
+                        Live Preview
+                      </p>
+                      <h3 className="mt-1 text-lg font-medium">Support Console</h3>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="h-3 w-3 rounded-full bg-rose-400" />
+                      <span className="h-3 w-3 rounded-full bg-amber-400" />
+                      <span className="h-3 w-3 rounded-full bg-emerald-400" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 rounded-[1.4rem] bg-white/6 p-4">
+                    <div className="flex justify-start">
+                      <div className="max-w-[78%] rounded-2xl rounded-tl-md bg-white/10 px-4 py-3 text-sm text-slate-100">
+                        Hi there, welcome to SupportSync. How can I help today?
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <div className="max-w-[78%] rounded-2xl rounded-tr-md bg-gradient-to-r from-orange-400 to-amber-400 px-4 py-3 text-sm font-medium text-slate-950">
+                        My order is delayed and I need urgent help.
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4">
+                      <div className="flex items-center gap-2 text-xs uppercase tracking-[0.28em] text-emerald-300">
+                        Escalation Triggered
+                      </div>
+                      <p className="mt-2 text-sm text-slate-200">
+                        Customer frustration detected. Routing this conversation
+                        to a live agent while AI keeps context ready.
+                      </p>
+                    </div>
+
+                    <motion.div
+                      animate={{ y: [0, -6, 0] }}
+                      transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                      className="grid gap-3 rounded-2xl bg-white p-4 text-slate-900 shadow-lg"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.24em] text-slate-400">
+                            Human Agent
+                          </p>
+                          <h4 className="text-sm font-semibold">Live Support</h4>
+                        </div>
+                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
+                          Live
+                        </span>
+                      </div>
+                      <div className="rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
+                        Agent is handling your chat. Please wait...
+                      </div>
+                    </motion.div>
+                  </div>
+                </div>
+
+                <motion.div
+                  animate={{ y: [0, -7, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute -bottom-5 -right-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-orange-500 to-amber-400 text-2xl shadow-[0_20px_40px_rgba(251,146,60,0.35)]"
+                >
+                  💬
+                </motion.div>
               </div>
-
-              <button
-                onClick={() => router.push("/dashboard")}
-                className="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-100 transition"
-              >
-                Dashboard
-              </button>
-
-              <button
-                onClick={handleLogout}
-                className="w-full text-left px-3 py-2 text-red-600 hover:bg-red-50 rounded-xl transition"
-              >
-                Logout
-              </button>
             </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    ) : (
-      <button
-  onClick={handleLogin}
-  disabled={loading}
-  className="px-5 py-2 rounded-full bg-gray-900 text-white 
-             hover:bg-gray-800 transition shadow-md
-             disabled:opacity-60 disabled:cursor-not-allowed"
->
-  {loading ? "Redirecting..." : "Login"}
-</button>
-    )}
-  </div>
-</motion.header>
-      <main className="max-w-7xl mx-auto px-6 pt-32 grid md:grid-cols-2 gap-12 items-center">
-        <div>
-          <motion.h2 {...fadeUp} className="text-5xl font-bold leading-tight">
-            AI + Human Support <br />
-            <span className="text-indigo-600">Perfectly Synced</span>
-          </motion.h2>
+          </section>
 
-          <motion.p {...fadeUp} className="mt-6 text-zinc-600 max-w-md text-lg">
-            A smart chatbot that handles users automatically and connects them to human support when needed.
-          </motion.p>
+          <section id="features" className="mt-28">
+            <motion.div {...fadeUp} className="mb-14 text-center">
+              <div className="mb-5 inline-flex rounded-full border border-white/70 bg-white/75 px-4 py-2 text-sm text-slate-700 shadow-[0_10px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+                Crafted for modern support teams
+              </div>
+              <h3 className="mx-auto max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 md:text-5xl">
+                A better first impression for every customer conversation.
+              </h3>
+              <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-600">
+                SupportSync blends automation, escalation, and real-time support
+                in one clean system that feels fast on the outside and manageable
+                on the inside.
+              </p>
+            </motion.div>
 
-          <motion.div {...fadeUp} className="mt-8 flex gap-4">
-            <button onClick={handleCTA} className="px-6 py-3 bg-indigo-600 text-white rounded-xl">
-             {ownerId ? "Start Building" : "Get Started"}
-            </button>
+            <div className="grid gap-6 md:grid-cols-3">
+              {featureCards.map((card, index) => (
+                <motion.div
+                  key={card.title}
+                  {...fadeUp}
+                  transition={{ delay: index * 0.06, duration: 0.55 }}
+                  whileHover={{ y: -8 }}
+                  className="group relative overflow-hidden rounded-[2rem] border border-white/80 bg-white/75 p-7 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl"
+                >
+                  <div
+                    className={`absolute inset-0 bg-gradient-to-br ${card.accent} opacity-0 transition duration-500 group-hover:opacity-100`}
+                  />
+                  <div className="relative">
+                    <div className="mb-5 h-12 w-12 rounded-2xl bg-slate-950 text-lg text-white shadow-lg" />
+                    <h4 className="text-xl font-semibold tracking-tight text-slate-950">
+                      {card.title}
+                    </h4>
+                    <p className="mt-3 text-sm leading-7 text-slate-600">
+                      {card.body}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </section>
 
-            <button
-              onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
-              className="px-6 py-3 border rounded-xl"
+          <section className="mt-28 grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
+            <motion.div
+              {...fadeUp}
+              className="rounded-[2rem] border border-white/80 bg-slate-950 p-8 text-white shadow-[0_24px_70px_rgba(15,23,42,0.18)]"
             >
-              Know More
-            </button>
-          </motion.div>
-        </div>
-        <div className="flex flex-col items-end">
-          
-          <motion.div
-            initial={{ opacity: 0, x: 60 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-            viewport={{ once: true }}
-            className="w-full max-w-md bg-white border rounded-2xl shadow-xl p-6"
-          >
-            <div className="flex gap-2 mb-4">
-              <span className="w-3 h-3 bg-red-400 rounded-full"></span>
-              <span className="w-3 h-3 bg-yellow-400 rounded-full"></span>
-              <span className="w-3 h-3 bg-green-400 rounded-full"></span>
+              <p className="text-xs uppercase tracking-[0.3em] text-orange-300">
+                Why it feels better
+              </p>
+              <h3 className="mt-3 text-3xl font-semibold tracking-tight">
+                Faster replies, calmer handoffs, cleaner operations.
+              </h3>
+              <p className="mt-5 max-w-xl text-sm leading-7 text-slate-300">
+                Your AI handles the repetitive work, your agents jump in only when
+                needed, and customers never feel like they fell into a broken support loop.
+              </p>
+            </motion.div>
+
+            <div className="grid gap-5 sm:grid-cols-3">
+              {[
+                { value: "90%", label: "routine questions answered by AI" },
+                { value: "1 script", label: "to embed the widget anywhere" },
+                { value: "Instant", label: "real-time sync with live agents" },
+              ].map((item, index) => (
+                <motion.div
+                  key={item.label}
+                  {...fadeUp}
+                  transition={{ delay: index * 0.05, duration: 0.55 }}
+                  whileHover={{ scale: 1.03, y: -4 }}
+                  className="rounded-[2rem] border border-white/80 bg-white/75 p-7 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl"
+                >
+                  <p className="text-3xl font-semibold tracking-tight text-orange-500">
+                    {item.value}
+                  </p>
+                  <p className="mt-2 text-sm leading-7 text-slate-600">
+                    {item.label}
+                  </p>
+                </motion.div>
+              ))}
             </div>
+          </section>
 
-            <div className="space-y-3 text-sm">
-              <p className="text-zinc-500">AI Agent</p>
-              <div className="bg-zinc-100 p-3 rounded-xl w-fit">
-                Hello! How can I help you today?
+          <section className="mt-28">
+            <motion.div
+              {...fadeUp}
+              className="relative overflow-hidden rounded-[2.4rem] border border-white/80 bg-white/75 px-8 py-14 text-center shadow-[0_24px_80px_rgba(15,23,42,0.1)] backdrop-blur-2xl md:px-16"
+            >
+              <div className="absolute left-10 top-10 h-24 w-24 rounded-full bg-orange-300/25 blur-2xl" />
+              <div className="absolute bottom-6 right-10 h-32 w-32 rounded-full bg-sky-300/20 blur-3xl" />
+
+              <div className="relative">
+                <p className="text-xs uppercase tracking-[0.34em] text-slate-500">
+                  Launch your support system
+                </p>
+                <h3 className="mx-auto mt-4 max-w-2xl text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
+                  Launch a landing page that feels sharp, modern, and support-ready.
+                </h3>
+                <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-600">
+                  Create a stronger first impression, onboard faster, and make
+                  your support workflow feel polished from the very first visit.
+                </p>
+                <button
+                  onClick={handleCTA}
+                  className="mt-9 rounded-2xl bg-slate-950 px-8 py-4 text-lg font-medium text-white shadow-[0_18px_40px_rgba(15,23,42,0.2)] transition hover:-translate-y-0.5 hover:bg-slate-800"
+                >
+                  {ownerId ? "Go to Dashboard" : "Start Building"}
+                </button>
               </div>
+            </motion.div>
+          </section>
+        </main>
 
-              <p className="text-zinc-500 text-right">User</p>
-              <div className="bg-indigo-50 p-3 rounded-xl w-fit ml-auto">
-                I need help with refund 😡
-              </div>
-
-              <p className="text-zinc-500">System</p>
-              <div className="bg-green-50 p-3 rounded-xl w-fit">
-                Connecting to human agent...
-              </div>
-            </div>
-          </motion.div>
-          <motion.div
-            animate={{ y: [0, -6, 0] }}
-            transition={{ repeat: Infinity, duration: 1.5 }}
-            className="mt-4"
-          >
-            <div className="w-12 h-12 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:scale-105 transition">
-              💬
-            </div>
-          </motion.div>
-
-        </div>
-      </main>
-<section id="features" className="mt-32 max-w-7xl mx-auto px-6">
-
- <motion.div {...fadeUp} className="relative text-center mb-16">
-  <div className="absolute inset-0 -z-10 flex justify-center">
-    <div className="w-[500px] h-[500px] bg-indigo-200/30 blur-3xl rounded-full animate-pulse"></div>
-  </div>
-  <div className="inline-flex items-center px-4 py-1 rounded-full bg-indigo-50 text-indigo-600 text-sm font-medium mb-6">
-    ✨ AI-Powered Support System
-  </div>
-  <h3 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 max-w-3xl mx-auto leading-tight">
-    Powerful features, built for scale
-  </h3>
-  <p className="mt-5 text-gray-600 text-lg max-w-2xl mx-auto leading-relaxed">
-    Everything you need to automate support, improve response time, and deliver
-    a seamless customer experience — without extra complexity.
-  </p>
-
-</motion.div>
-  <div className="grid md:grid-cols-3 gap-8">
-    <motion.div
-      {...fadeUp}
-      whileHover={{ y: -6, scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 200 }}
-      className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm 
-                 hover:shadow-xl transition relative overflow-hidden group"
-    >
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-transparent opacity-0 group-hover:opacity-100 transition"></div>
-
-      <h4 className="font-semibold text-lg mb-2 relative">
-        ⚡ AI Auto Replies
-      </h4>
-      <p className="text-sm text-gray-600 relative">
-        <span className="font-medium text-gray-900">Instant responses</span> to customer queries using intelligent AI trained for support conversations.
-      </p>
-    </motion.div>
-
-
-    <motion.div
-      {...fadeUp}
-      whileHover={{ y: -6, scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 200 }}
-      className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm 
-                 hover:shadow-xl transition relative overflow-hidden group"
-    >
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-transparent opacity-0 group-hover:opacity-100 transition"></div>
-
-      <h4 className="font-semibold text-lg mb-2">
-        🌍 Embed Anywhere
-      </h4>
-      <p className="text-sm text-gray-600">
-        Easily integrate using a <span className="font-medium text-gray-900">single script</span> — works on any website or platform.
-      </p>
-    </motion.div>
-    <motion.div
-      {...fadeUp}
-      whileHover={{ y: -6, scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 200 }}
-      className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm 
-                 hover:shadow-xl transition relative overflow-hidden group"
-    >
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-transparent opacity-0 group-hover:opacity-100 transition"></div>
-
-      <h4 className="font-semibold text-lg mb-2">
-        🚀 Smart Escalation
-      </h4>
-      <p className="text-sm text-gray-600">
-        Automatically detects frustration and <span className="font-medium text-gray-900">escalates to human support</span> instantly.
-      </p>
-    </motion.div>
-
-  </div>
-</section>
-<section className="mt-32 py-24 relative overflow-hidden">
-  <div className="absolute inset-0 -z-10">
-    <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-indigo-200/30 blur-3xl rounded-full animate-pulse"></div>
-    <div className="absolute bottom-0 right-10 w-[400px] h-[400px] bg-blue-200/20 blur-3xl rounded-full animate-pulse"></div>
-  </div>
-
-  <div className="max-w-7xl mx-auto px-6 text-center">
-    <motion.h3
-      {...fadeUp}
-      className="text-4xl font-bold mb-4 tracking-tight text-gray-900"
-    >
-      Why businesses choose SupportSync
-    </motion.h3>
-
-    <p className="text-gray-600 max-w-2xl mx-auto mb-16">
-      Built for speed, reliability, and intelligent automation — trusted by modern teams.
-    </p>
-    <div className="grid md:grid-cols-3 gap-10">
-      <motion.div
-        {...fadeUp}
-        whileHover={{ scale: 1.05, y: -5 }}
-        transition={{ type: "spring", stiffness: 200 }}
-        className="p-8 rounded-2xl bg-white/70 backdrop-blur-xl border border-gray-200 shadow-sm hover:shadow-xl transition"
-      >
-        <h4 className="text-4xl font-bold text-indigo-600">90%</h4>
-        <p className="mt-2 text-gray-600">Queries solved by AI</p>
-      </motion.div>
-
-       <motion.div
-        {...fadeUp}
-        whileHover={{ scale: 1.05, y: -5 }}
-        transition={{ type: "spring", stiffness: 200 }}
-        className="p-8 rounded-2xl bg-white/70 backdrop-blur-xl border border-gray-200 shadow-sm hover:shadow-xl transition"
-      >
-        <h4 className="text-4xl font-bold text-indigo-600">24/7</h4>
-        <p className="mt-2 text-gray-600">Always available support</p>
-      </motion.div>
-      <motion.div
-        {...fadeUp}
-        whileHover={{ scale: 1.05, y: -5 }}
-        transition={{ type: "spring", stiffness: 200 }}
-        className="p-8 rounded-2xl bg-white/70 backdrop-blur-xl border border-gray-200 shadow-sm hover:shadow-xl transition"
-      >
-        <h4 className="text-4xl font-bold text-indigo-600">Instant</h4>
-        <p className="mt-2 text-gray-600">Human escalation</p>
-      </motion.div>
-
-    </div>
- 
-        </div>
-      </section>
-      <section className="py-24 bg-gradient-to-br from-indigo-50 via-white to-purple-50 text-center">
-        <motion.div {...fadeUp} className="max-w-2xl mx-auto bg-white/60 backdrop-blur-xl border border-white/40 shadow-xl rounded-3xl p-10">
-          <h3 className="text-3xl font-bold mb-4 text-zinc-900">
-            Start building smarter support today
-          </h3>
-
-          <p className="text-zinc-600 mb-8">
-            Automate conversations, reduce workload, and deliver better customer experience.
+        <footer className="px-6 pb-12 pt-6 text-center text-sm text-slate-500">
+          <p>
+            © {new Date().getFullYear()} SupportSync. Built for modern AI + human
+            support experiences.
           </p>
+          <div className="mt-2 flex justify-center gap-4 text-xs">
+            <a
+              href="https://www.linkedin.com/in/prakharkumar1980"
+              target="_blank"
+              className="transition hover:text-sky-600"
+            >
+              LinkedIn
+            </a>
+          </div>
+        </footer>
+      </div>
 
-          <motion.button onClick={handleCTA} className="px-8 py-4 bg-indigo-600 text-white rounded-xl text-lg">
-            {ownerId ? "Start Building" : "Get Started"}
-          </motion.button>
-        </motion.div>
-      </section>
+      <Badge />
 
-     <footer className="py-12 text-center text-sm text-zinc-500">
-  <p>
-    © {new Date().getFullYear()} SupportSync • Crafted by{" "}
-    <span className="text-black font-medium hover:text-indigo-600 transition cursor-pointer">
-      Prakhar Kumar
-    </span>
-  </p>
-
-  <div className="mt-2 flex justify-center gap-4 text-xs">
-   
-    <a
-      href="https://www.linkedin.com/in/prakharkumar1980"
-      target="_blank"
-      className="hover:text-blue-600 transition"
-    >
-      LinkedIn
-    </a>
-  </div>
-</footer>
-
-    </div>
-    <Badge />
-
-    {loading && (
-  <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[9999]">
-    <div className="bg-white px-6 py-4 rounded-xl shadow-xl text-sm">
-      Logging you in...
-    </div>
-  </div>
-)}
-</>
-
+      {loading && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/30 backdrop-blur-sm">
+          <div className="rounded-2xl border border-white/60 bg-white px-6 py-4 text-sm shadow-2xl">
+            Logging you in...
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
