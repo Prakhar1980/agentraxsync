@@ -3,13 +3,15 @@ const next = require("next");
 const http = require("http");
 const { Server } = require("socket.io");
 
-const dev = process.env.NODE_ENV !== "production";
+const isHostedDeploy = Boolean(process.env.RENDER || process.env.RENDER_EXTERNAL_URL);
+const dev = !isHostedDeploy;
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
 const PORT = process.env.PORT || 3000;
 
-app.prepare()
+app
+  .prepare()
   .then(() => {
     const server = express();
     const httpServer = http.createServer(server);
@@ -23,8 +25,18 @@ app.prepare()
 
     globalThis.io = io;
 
+    server.use((req, res, nextMiddleware) => {
+      res.setHeader(
+        "Cache-Control",
+        "no-store, no-cache, must-revalidate, proxy-revalidate"
+      );
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+      nextMiddleware();
+    });
+
     io.on("connection", (socket) => {
-      console.log("⚡ Connected:", socket.id);
+      console.log("Socket connected:", socket.id);
 
       socket.on("join", ({ sessionId, role, agentName, ownerId }) => {
         const roomId = sessionId?.toString?.().trim?.();
@@ -37,7 +49,7 @@ app.prepare()
         socket.data.ownerId = normalizedOwnerId || null;
         socket.data.role = role;
 
-        console.log(`➡ ${role} joined room: ${roomId}`);
+        console.log(`${role} joined room: ${roomId}`);
 
         if (normalizedOwnerId) {
           socket.join(`owner:${normalizedOwnerId}`);
@@ -79,7 +91,7 @@ app.prepare()
 
         if (!roomId || !message || !sender) return;
 
-        console.log(`📨 ${sender} -> ${roomId}`);
+        console.log(`${sender} -> ${roomId}`);
 
         io.to(roomId).emit("receive_message", {
           message,
@@ -88,16 +100,19 @@ app.prepare()
       });
 
       socket.on("disconnect", () => {
-        console.log("❌ Disconnected:", socket.id);
+        console.log("Socket disconnected:", socket.id);
       });
     });
 
-   server.use((req, res) => handle(req, res));
+    server.use((req, res) => handle(req, res));
+
     httpServer.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Next mode: ${dev ? "development" : "production"}`);
+      console.log(`Serving folder: ${process.cwd()}`);
     });
   })
   .catch((err) => {
-    console.error("❌ Server failed to start:", err);
+    console.error("Server failed to start:", err);
     process.exit(1);
   });

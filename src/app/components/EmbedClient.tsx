@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Badge from "@/app/components/Badge";
@@ -9,16 +9,43 @@ type Props = {
   ownerId: string;
 };
 
+type BotSettings = {
+  businessName: string;
+  supportEmail: string;
+  knowledge: string;
+};
+
+const steps = [
+  {
+    title: "Copy script",
+    text: "Use the secure widget snippet generated for your account.",
+  },
+  {
+    title: "Paste before body",
+    text: "Add it once to your website layout or CMS footer.",
+  },
+  {
+    title: "Go live",
+    text: "Your chat bubble appears instantly for every visitor.",
+  },
+];
+
 export default function EmbedClient({ ownerId }: Props) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [settings, setSettings] = useState<BotSettings>({
+    businessName: "",
+    supportEmail: "",
+    knowledge: "",
+  });
 
-  const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://your-domain.com";
 
   const embedCode = `<script
-  src="${APP_URL}/widget.js"
+  src="${appUrl}/widget.js"
   data-owner-id="${ownerId}"
-  data-api-url="${APP_URL}/api/chat">
+  data-api-url="${appUrl}/api/chat">
 </script>`;
 
   const copyCode = async () => {
@@ -27,186 +54,317 @@ export default function EmbedClient({ ownerId }: Props) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  useEffect(() => {
+    const fetchSettings = async () => {
+      if (!ownerId) return;
+
+      try {
+        const res = await fetch(`/api/setting?ownerId=${ownerId}`, {
+          cache: "no-store",
+        });
+        const data = await res.json();
+
+        if (!res.ok) return;
+
+        setSettings({
+          businessName: data?.businessName || "",
+          supportEmail: data?.supportEmail || "",
+          knowledge: data?.knowledge || "",
+        });
+      } catch (err) {
+        console.log("PREVIEW SETTINGS ERROR:", err);
+      }
+    };
+
+    fetchSettings();
+  }, [ownerId]);
+
+  const preview = useMemo(() => {
+    const businessName = settings.businessName || "Your Company";
+    const supportEmail = settings.supportEmail || "support@yourcompany.com";
+    const knowledge =
+      settings.knowledge.trim() ||
+      "Add pricing, services, policies, timings, FAQs, and support instructions in the dashboard to preview your trained chatbot here.";
+    const shortKnowledge =
+      knowledge.length > 135 ? `${knowledge.slice(0, 135).trim()}...` : knowledge;
+    const domain = businessName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "your-company";
+
+    return {
+      businessName,
+      supportEmail,
+      knowledge,
+      shortKnowledge,
+      domain: `${domain}.com`,
+      initials: businessName
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((word) => word[0])
+        .join("")
+        .toUpperCase() || "AI",
+    };
+  }, [settings]);
+
   return (
-     <>
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-white to-gray-200">
-      <motion.header
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="fixed top-0 left-0 w-full z-50 bg-white/70 backdrop-blur-xl"
-      >
-        <div className="max-w-6xl mx-auto flex justify-between items-center px-4 py-4">
+    <>
+      <main className="relative min-h-screen overflow-hidden bg-[#f6f8fb] text-slate-950">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-[-120px] top-[-120px] h-80 w-80 rounded-full bg-cyan-200/60 blur-3xl" />
+          <div className="absolute right-[-90px] top-40 h-96 w-96 rounded-full bg-rose-200/50 blur-3xl" />
+          <div className="absolute bottom-[-140px] left-1/3 h-96 w-96 rounded-full bg-amber-200/50 blur-3xl" />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.04)_1px,transparent_1px)] bg-[size:42px_42px]" />
+        </div>
 
-          <div className="flex items-center gap-3 cursor-pointer">
-            <img src="/logo.png" className="w-12 h-12 object-contain" />
-            <h1 className="text-xl font-semibold">
-              Support<span className="text-indigo-600">Sync</span>
-            </h1>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="px-4 py-2 text-sm bg-gray-200 rounded-lg hover:bg-gray-300 transition"
-            >
-              ← Dashboard
-            </button>
+        <motion.header
+          initial={{ y: -18, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="fixed left-0 top-0 z-50 w-full border-b border-white/70 bg-white/75 backdrop-blur-xl"
+        >
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
             <button
               onClick={() => router.push("/")}
-              className="px-4 py-2 text-sm bg-black text-white rounded-lg hover:opacity-80 transition"
+              className="flex items-center gap-3"
+              aria-label="Go to home"
             >
-              Home
+              <img src="/logo.png" className="h-11 w-11 object-contain" alt="SupportSync logo" />
+              <div className="text-left">
+                <h1 className="text-lg font-bold tracking-tight">
+                  Support<span className="text-cyan-600">Sync</span>
+                </h1>
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">
+                  Widget setup
+                </p>
+              </div>
             </button>
-          </div>
 
-        </div>
-      </motion.header>
-      <div className="pt-28 px-4 pb-16">
-        <div className="max-w-5xl mx-auto">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => router.push("/dashboard")}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => router.push("/")}
+                className="rounded-lg bg-slate-950 px-3 py-2 text-sm font-semibold text-white shadow-lg shadow-slate-950/20 transition hover:bg-slate-800"
+              >
+                Home
+              </button>
+            </div>
+          </div>
+        </motion.header>
+
+        <section className="relative mx-auto grid max-w-7xl gap-8 px-4 pb-16 pt-28 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-start lg:pt-32">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white/70 backdrop-blur-2xl rounded-3xl 
-            shadow-[0_20px_80px_rgba(0,0,0,0.15)] 
-            p-8 space-y-8"
+            transition={{ duration: 0.45 }}
+            className="space-y-6"
           >
-            <div>
-              <h2 className="text-3xl font-bold">
-                🌐 Embed Your Chatbot
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-white/80 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-cyan-700 shadow-sm">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              Ready to install
+            </div>
+
+            <div className="space-y-4">
+              <h2 className="max-w-xl text-4xl font-black leading-tight tracking-tight text-slate-950 sm:text-5xl">
+                Embed your AI chatbot with a premium website feel.
               </h2>
-              <p className="text-gray-500 text-sm mt-2">
-                Copy and paste this script before {"</body>"}
+              <p className="max-w-2xl text-base leading-7 text-slate-600">
+                Copy one script, paste it into your site, and launch a polished support widget that looks native on modern web pages.
               </p>
             </div>
-            <div className="bg-black rounded-2xl overflow-hidden shadow-lg">
-              <div className="flex justify-between items-center px-4 py-3 bg-white/10 backdrop-blur">
-                <span className="text-sm text-white/80">Embed Code</span>
+
+            <div className="rounded-2xl border border-cyan-100 bg-white/85 p-5 shadow-sm backdrop-blur">
+              <h3 className="text-base font-black text-slate-950">How it works</h3>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                {steps.map((step, index) => (
+                  <div key={step.title} className="rounded-xl bg-slate-50 p-3">
+                    <p className="text-xs font-black uppercase tracking-widest text-cyan-700">
+                      Step {index + 1}
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-slate-900">{step.title}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">{step.text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-slate-900 bg-slate-950 shadow-[0_24px_70px_rgba(15,23,42,0.28)]">
+              <div className="flex items-center justify-between border-b border-white/10 bg-white/5 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <span className="h-3 w-3 rounded-full bg-rose-400" />
+                  <span className="h-3 w-3 rounded-full bg-amber-300" />
+                  <span className="h-3 w-3 rounded-full bg-emerald-400" />
+                  <span className="ml-2 text-xs font-semibold text-white/70">embed-code.html</span>
+                </div>
                 <button
                   onClick={copyCode}
-                  className="text-xs bg-white text-black px-3 py-1 rounded-md hover:scale-105 transition"
+                  className="rounded-md bg-white px-3 py-1.5 text-xs font-bold text-slate-950 transition hover:bg-cyan-100"
                 >
-                  {copied ? "Copied ✅" : "Copy"}
+                  {copied ? "Copied" : "Copy code"}
                 </button>
               </div>
 
-              <pre className="p-4 text-xs text-green-400 overflow-x-auto">
+              <pre className="max-h-64 overflow-x-auto p-5 text-xs leading-6 text-emerald-300 sm:text-sm">
                 {embedCode}
               </pre>
             </div>
-            <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-2xl p-5">
-              <h3 className="font-semibold text-indigo-600">
-                ⚡ How it works
-              </h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Add script → chatbot appears instantly on your site.
+
+            <div className="rounded-2xl border border-emerald-100 bg-white/90 p-5 shadow-sm backdrop-blur">
+              <p className="text-xs font-black uppercase tracking-widest text-emerald-700">
+                {copied ? "Code copied" : "Almost done"}
               </p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-3">
-                Live Preview
+              <h3 className="mt-2 text-xl font-black text-slate-950">
+                Thank you for using SupportSync. Congrats, your chatbot is ready to embed.
               </h3>
-
-              <div className="relative bg-gradient-to-br from-gray-100 via-white to-gray-200 
-              rounded-2xl h-[520px] overflow-hidden shadow-inner">
-
-              
-                <div className="bg-white/80 backdrop-blur px-4 py-2 text-sm text-gray-500 shadow-sm">
-                  your-website.com
-                </div>
-
-                <div className="p-6 text-gray-400 text-sm">
-                  Your website content...
-                </div>
-<motion.div
-  initial={{ opacity: 0, scale: 0.8, y: 40 }}
-  animate={{ opacity: 1, scale: 1, y: 0 }}
-  transition={{ duration: 0.3 }}
-  className="absolute bottom-4 right-4"
->
-
-  <div className="w-[300px] h-[420px] bg-white rounded-2xl 
-  shadow-[0_20px_60px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden">
-
-
-    <div className="bg-black text-white px-3 py-2 flex items-center gap-2">
-      <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-xs font-bold">
-        AI
-      </div>
-      <div>
-        <p className="text-sm font-semibold leading-tight">Support</p>
-        <p className="text-[10px] text-green-400">● Online</p>
-      </div>
-    </div>
-
-
-    <div className="flex-1 p-3 space-y-3 bg-gray-50 overflow-y-auto">
-
-      <div className="bg-white px-2 py-1.5 rounded-lg text-xs shadow w-fit max-w-[75%]">
-        Hi 👋 How can I help?
-      </div>
-
-      <div className="bg-black text-white px-2 py-1.5 rounded-lg text-xs ml-auto w-fit max-w-[75%]">
-        Pricing?
-      </div>
-
-      <div className="bg-white px-2 py-1.5 rounded-lg text-xs shadow w-fit max-w-[75%]">
-        Starts from ₹499/month 👍
-      </div>
-
-    </div>
-    <div className="p-2 bg-white">
-      <div className="flex items-center gap-1 bg-gray-100 rounded-lg px-2 py-1">
-        <input
-          placeholder="Message..."
-          className="flex-1 bg-transparent outline-none text-xs"
-        />
-        <button className="bg-black text-white px-2 py-1 rounded text-xs">
-          Send
-        </button>
-      </div>
-    </div>
-
-  </div>
-<motion.div
-  initial={{ scale: 0, opacity: 0 }}
-  animate={{ scale: 1, opacity: 1 }}
-  transition={{ duration: 0.3 }}
-  className="fixed bottom-6 right-6 z-[9999]"
->
-  <button className="w-14 h-14 bg-black text-white rounded-full 
-  flex items-center justify-center 
-  shadow-[0_10px_30px_rgba(0,0,0,0.4)]
-  hover:scale-110 active:scale-95 transition">
-    💬
-  </button>
-</motion.div>
-
-</motion.div>
-              </div>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Paste the copied script into your website and your support widget will appear for visitors.
+              </p>
+              <button
+                onClick={() => router.push("/")}
+                className="mt-4 rounded-xl bg-slate-950 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-slate-950/20 transition hover:bg-slate-800"
+              >
+                Go to Home
+              </button>
             </div>
-
           </motion.div>
 
-          {/* STATUS */}
-          <AnimatePresence>
-            {copied && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="mt-4 text-center text-green-600 text-sm"
-              >
-                ✔ Copied successfully
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.1 }}
+            className="relative"
+          >
+            <div className="overflow-hidden rounded-3xl border border-white/80 bg-white/80 p-3 shadow-[0_30px_100px_rgba(15,23,42,0.18)] backdrop-blur-xl">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-full bg-rose-400" />
+                    <span className="h-3 w-3 rounded-full bg-amber-300" />
+                    <span className="h-3 w-3 rounded-full bg-emerald-400" />
+                  </div>
+                  <div className="rounded-full border border-slate-200 bg-white px-4 py-1 text-xs font-semibold text-slate-500">
+                    {preview.domain}
+                  </div>
+                  <div className="h-5 w-14" />
+                </div>
 
-        </div>
-      </div>
+                <div className="relative min-h-96 overflow-hidden bg-slate-50 p-5">
+                  <div className="max-w-md space-y-4">
+                    <div className="rounded-2xl bg-slate-950 p-5 text-white shadow-lg">
+                      <p className="text-xs font-bold uppercase tracking-widest text-cyan-200">
+                        {preview.businessName}
+                      </p>
+                      <h3 className="mt-3 text-2xl font-black">
+                        Simple website preview
+                      </h3>
+                      <p className="mt-3 text-sm leading-6 text-white/70">
+                        The small chat button stays in the corner. Visitors click it to open your support box.
+                      </p>
+                    </div>
 
-    </div>
-    <Badge />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                          Uses dashboard data
+                        </p>
+                        <p className="mt-2 text-sm leading-5 text-slate-600">
+                          {preview.shortKnowledge}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                          Human support
+                        </p>
+                        <p className="mt-2 break-words text-sm font-bold text-slate-900">
+                          {preview.supportEmail}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <AnimatePresence>
+                    {previewOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.94, y: 18 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.96, y: 12 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute bottom-20 right-5 w-72 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+                      >
+                        <div className="flex items-center justify-between bg-slate-950 px-3 py-3 text-white">
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-400 text-xs font-black text-slate-950">
+                              {preview.initials}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold leading-tight">{preview.businessName}</p>
+                              <p className="text-xs text-emerald-300">Online</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => setPreviewOpen(false)}
+                            className="rounded-md bg-white/10 px-2 py-1 text-xs font-bold text-white"
+                          >
+                            Close
+                          </button>
+                        </div>
+
+                        <div className="h-48 space-y-3 overflow-y-auto bg-slate-50 p-3">
+                          <div className="w-fit max-w-56 rounded-2xl rounded-tl-md bg-white px-3 py-2 text-xs leading-5 text-slate-700 shadow-sm">
+                            Hi, I can answer questions about {preview.businessName}.
+                          </div>
+                          <div className="ml-auto w-fit max-w-52 rounded-2xl rounded-tr-md bg-slate-950 px-3 py-2 text-xs leading-5 text-white">
+                            What do you know?
+                          </div>
+                          <div className="w-fit max-w-56 rounded-2xl rounded-tl-md bg-white px-3 py-2 text-xs leading-5 text-slate-700 shadow-sm">
+                            {preview.shortKnowledge}
+                          </div>
+                        </div>
+
+                        <div className="border-t border-slate-100 bg-white p-3">
+                          <div className="flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2">
+                            <span className="flex-1 text-xs text-slate-400">Message...</span>
+                            <button className="rounded-lg bg-slate-950 px-3 py-1.5 text-xs font-bold text-white">
+                              Send
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <button
+                    onClick={() => setPreviewOpen((open) => !open)}
+                    className="absolute bottom-5 right-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-500 text-sm font-black text-white shadow-xl transition hover:scale-105"
+                    aria-label="Toggle chat preview"
+                  >
+                    {preview.initials}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </section>
+
+        <AnimatePresence>
+          {copied && (
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.98 }}
+              className="fixed bottom-6 left-1/2 z-[9999] -translate-x-1/2 rounded-full border border-emerald-200 bg-white px-5 py-3 text-sm font-bold text-emerald-700 shadow-[0_18px_50px_rgba(15,23,42,0.16)]"
+            >
+              Code copied successfully
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
+      <Badge />
     </>
- 
   );
 }

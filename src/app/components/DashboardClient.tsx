@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 
 type Props = {
@@ -9,27 +9,50 @@ type Props = {
   email?: string;
 };
 
+const tips = [
+  "Copy FAQs from your website, WhatsApp, Instagram DMs, and support emails.",
+  "Add pricing, product list, delivery time, refund policy, warranty, and contact rules.",
+  "Write answers exactly how your company should reply to customers.",
+];
+
+const checklist = [
+  "Business name and short brand intro",
+  "Products, services, pricing, and offers",
+  "Return, refund, cancellation, and warranty rules",
+  "Support email, phone, working hours, and escalation steps",
+];
+
 export default function DashboardClient({ ownerId, email }: Props) {
   const router = useRouter();
-
   const [form, setForm] = useState({
     businessName: "",
     supportEmail: "",
     knowledge: "",
   });
-
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const firstLetter = email?.charAt(0).toUpperCase() || "U";
-  const fetchSettings = async () => {
+  const stats = useMemo(() => {
+    const words = form.knowledge.trim().split(/\s+/).filter(Boolean).length;
+    const chars = form.knowledge.length;
+    const score = Math.min(100, Math.round((words / 180) * 100));
+    return { words, chars, score };
+  }, [form.knowledge]);
+
+  const fetchSettings = async (showRefresh = false) => {
     if (!ownerId) return;
 
-    try {
-      const res = await fetch(`/api/setting?ownerId=${ownerId}`);
+    if (showRefresh) {
+      setRefreshing(true);
+      setSaved(false);
+    }
 
-      const text = await res.text();
-      const data = JSON.parse(text);
+    try {
+      const res = await fetch(`/api/setting?ownerId=${ownerId}&t=${Date.now()}`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
 
       if (!res.ok) {
         console.log(data?.error);
@@ -43,16 +66,17 @@ export default function DashboardClient({ ownerId, email }: Props) {
       });
     } catch (err) {
       console.log("FETCH ERROR:", err);
+    } finally {
+      setRefreshing(false);
     }
   };
 
   useEffect(() => {
     fetchSettings();
   }, [ownerId]);
+
   const saveSettings = async () => {
     if (!ownerId) return;
-
-    console.log("Saving...", ownerId);
 
     setLoading(true);
     setSaved(false);
@@ -60,19 +84,11 @@ export default function DashboardClient({ ownerId, email }: Props) {
     try {
       const res = await fetch("/api/setting", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ownerId,
-          ...form,
-        }),
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ ownerId, ...form }),
       });
-
-      const text = await res.text();
-      console.log("RAW RESPONSE:", text);
-
-      const data = JSON.parse(text);
+      const data = await res.json();
 
       if (!res.ok) {
         console.log(data?.error);
@@ -91,153 +107,223 @@ export default function DashboardClient({ ownerId, email }: Props) {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setForm((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   if (!ownerId) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-500 font-semibold">
+      <main className="flex min-h-screen items-center justify-center bg-slate-100">
+        <div className="rounded-2xl bg-white p-6 text-red-600 shadow-xl">
           Unauthorized - Please login
-        </p>
-      </div>
+        </div>
+      </main>
     );
   }
-  return (
-    <div className="min-h-screen bg-gray-100">
-      <motion.header
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="fixed top-0 left-0 w-full z-50 bg-white/70 backdrop-blur-xl border-b"
-      >
-        <div className="max-w-7xl mx-auto flex justify-between items-center px-4 sm:px-6 py-4">
 
-          <h1
+  return (
+    <main className="min-h-screen bg-slate-100 text-slate-950">
+      <div className="fixed bottom-4 right-4 z-50 rounded-full bg-emerald-500 px-4 py-2 text-xs font-black text-white shadow-xl">
+        NEW DASHBOARD UI ACTIVE
+      </div>
+
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
+          <button
             onClick={() => router.push("/")}
-            className="text-lg sm:text-xl font-bold cursor-pointer"
+            className="text-xl font-black"
           >
-            Support<span className="text-indigo-600">Sync</span>
-          </h1>
+            Support<span className="text-cyan-600">Sync</span>
+          </button>
 
           <div className="flex items-center gap-3">
-
             <button
               onClick={() => router.push("/embed")}
-              className="hidden sm:block px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+              className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-bold text-white shadow-lg"
             >
               Embed Chatbot
             </button>
-
             <button
               onClick={() => router.push("/")}
-              className="hidden sm:block px-4 py-2 text-sm bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+              className="hidden rounded-xl bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow sm:block"
             >
               Home
             </button>
-
             {email && (
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-zinc-900 text-white flex items-center justify-center">
-                {firstLetter}
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500 font-black text-white">
+                {email.charAt(0).toUpperCase()}
               </div>
             )}
-
           </div>
         </div>
-      </motion.header>
-      <div className="pt-24 px-4 sm:px-6 pb-10">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="bg-white rounded-2xl shadow-sm border p-6 hover:shadow-md transition">
-            <h1 className="text-2xl font-bold">AI Chatbot Dashboard ⚡</h1>
-            <p className="text-gray-500 text-sm mt-1">
-              Configure your AI assistant to respond like your business
+      </header>
+
+      <section className="mx-auto grid max-w-7xl gap-6 px-5 py-8 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-3xl bg-white p-7 shadow-xl ring-1 ring-slate-200"
+          >
+            <div className="inline-flex rounded-full bg-cyan-50 px-3 py-1 text-xs font-black uppercase tracking-widest text-cyan-700">
+              Bot training dashboard
+            </div>
+            <h1 className="mt-4 max-w-3xl text-4xl font-black leading-tight">
+              Train your chatbot on the details only your company knows.
+            </h1>
+            <p className="mt-3 max-w-2xl text-slate-600">
+              Add your business data here. The embed preview and chatbot use this data to answer customers with your company information.
             </p>
-          </div>
-          <div className="bg-white rounded-2xl shadow-sm border p-6 space-y-5 hover:shadow-md transition">
-            <div>
-              <label className="text-sm font-medium text-gray-700">
-                Business Name
-              </label>
-              <p className="text-xs text-gray-400 mb-2">
-                Shown in chatbot replies
-              </p>
-              <input
-                className="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="e.g. SupportSync AI"
-                name="businessName"
-                value={form.businessName}
-                onChange={handleChange}
-              />
+
+            <div className="mt-6 rounded-2xl bg-slate-950 p-5 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-cyan-200">
+                    Knowledge readiness
+                  </p>
+                  <p className="mt-2 text-sm text-white/60">
+                    {stats.words} words, {stats.chars} characters
+                  </p>
+                </div>
+                <p className="text-4xl font-black">{stats.score}%</p>
+              </div>
+              <div className="mt-4 h-2 rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-cyan-400"
+                  style={{ width: `${stats.score}%` }}
+                />
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">
-                Support Email
-              </label>
-              <p className="text-xs text-gray-400 mb-2">
-                Used when chatbot escalates
-              </p>
-              <input
-                className="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="support@company.com"
-                name="supportEmail"
-                value={form.supportEmail}
-                onChange={handleChange}
-              />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08 }}
+            className="rounded-3xl bg-white p-7 shadow-xl ring-1 ring-slate-200"
+          >
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-black text-slate-800">
+                  Business Name
+                </label>
+                <p className="mt-1 text-xs text-slate-500">
+                  This appears in chatbot replies and embed preview.
+                </p>
+                <input
+                  className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                  name="businessName"
+                  placeholder="e.g. StepStyle Shoes"
+                  value={form.businessName}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-black text-slate-800">
+                  Support Email
+                </label>
+                <p className="mt-1 text-xs text-slate-500">
+                  Used when customers need human support.
+                </p>
+                <input
+                  className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                  name="supportEmail"
+                  placeholder="support@company.com"
+                  value={form.supportEmail}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">
-                Knowledge Base
+
+            <div className="mt-5">
+              <label className="text-sm font-black text-slate-800">
+                Company Knowledge Base
               </label>
+              <p className="mt-1 text-xs text-slate-500">
+                Paste FAQs, pricing, products, services, policies, and customer support instructions.
+              </p>
               <textarea
-                className="w-full border rounded-xl p-3 h-44 resize-none outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Add FAQs, policies, pricing..."
+                className="mt-2 min-h-80 w-full resize-none rounded-2xl border border-slate-300 px-4 py-4 leading-7 outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
                 name="knowledge"
+                placeholder="Example: Business Identity, products, target customers, pricing, refund rules, delivery time, support instructions..."
                 value={form.knowledge}
                 onChange={handleChange}
               />
             </div>
 
-            {/* SUCCESS MESSAGE */}
             <AnimatePresence>
               {saved && (
                 <motion.div
-                  initial={{ opacity: 0, y: -5 }}
+                  initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="text-green-700 text-sm font-medium bg-green-50 border border-green-200 p-3 rounded-xl"
+                  className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-700"
                 >
-                  Settings saved successfully 
+                  Settings saved successfully.
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* BUTTONS */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <button
-                type="button"
                 onClick={saveSettings}
                 disabled={loading}
-                className="w-full sm:w-auto bg-black text-white px-5 py-3 rounded-xl"
+                className="rounded-xl bg-slate-950 px-6 py-3 font-black text-white disabled:opacity-60"
               >
                 {loading ? "Saving..." : "Save Settings"}
               </button>
-
               <button
-                type="button"
-                onClick={fetchSettings}
-                className="w-full sm:w-auto bg-gray-100 border px-5 py-3 rounded-xl"
+                onClick={() => fetchSettings(true)}
+                disabled={refreshing}
+                className="rounded-xl border border-slate-300 bg-white px-6 py-3 font-black text-slate-800 disabled:opacity-60"
               >
-                Refresh
+                {refreshing ? "Refreshing..." : "Refresh Settings"}
               </button>
-
             </div>
-
-          </div>
+          </motion.div>
         </div>
-      </div>
-    </div>
+
+        <aside className="space-y-5 lg:sticky lg:top-24">
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="rounded-3xl bg-slate-950 p-6 text-white shadow-xl"
+          >
+            <p className="text-xs font-black uppercase tracking-widest text-cyan-200">
+              Company data tips
+            </p>
+            <h2 className="mt-3 text-2xl font-black">
+              How to get company data for your chatbot
+            </h2>
+            <div className="mt-5 space-y-3">
+              {tips.map((tip, index) => (
+                <div key={tip} className="rounded-2xl bg-white/10 p-4">
+                  <p className="text-sm font-bold text-cyan-100">Tip {index + 1}</p>
+                  <p className="mt-1 text-sm leading-6 text-white/75">{tip}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          <motion.div
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 4, repeat: Infinity }}
+            className="rounded-3xl bg-white p-6 shadow-xl ring-1 ring-slate-200"
+          >
+            <p className="text-xs font-black uppercase tracking-widest text-cyan-700">
+              Quick paste checklist
+            </p>
+            <div className="mt-4 space-y-3">
+              {checklist.map((item) => (
+                <div key={item} className="flex gap-3">
+                  <span className="mt-2 h-2 w-2 rounded-full bg-cyan-500" />
+                  <p className="text-sm leading-6 text-slate-600">{item}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </aside>
+      </section>
+    </main>
   );
 }
