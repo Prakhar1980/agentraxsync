@@ -122,9 +122,7 @@ export default function DashboardClient({ ownerId, email }: Props) {
 
   return (
     <main className="min-h-screen bg-slate-100 text-slate-950">
-      <div className="fixed bottom-4 right-4 z-50 rounded-full bg-emerald-500 px-4 py-2 text-xs font-black text-white shadow-xl">
-        DASHBOARD UI ACTIVE
-      </div>
+
 
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
