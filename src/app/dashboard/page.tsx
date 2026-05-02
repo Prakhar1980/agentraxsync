@@ -15,9 +15,7 @@ export default async function Page() {
 
   return (
     <>
-      <div className="fixed bottom-3 right-3 z-[10000] rounded-full bg-emerald-500 px-4 py-2 text-xs font-black text-white shadow-lg">
-         DASHBOARD UI
-      </div>
+      
       <DashboardClient ownerId={ownerId} />
     </>
   );
