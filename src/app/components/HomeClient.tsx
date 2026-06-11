@@ -95,24 +95,24 @@ function HomeClient({ ownerId }: { ownerId?: string }) {
 
   return (
     <>
-      <div className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,#fff7ed_0%,#f8fafc_34%,#dbeafe_68%,#f8fafc_100%)] text-slate-950">
+      <div className="min-h-screen overflow-hidden bg-[linear-gradient(135deg,#fff7ed_0%,#ecfeff_34%,#e0f2fe_66%,#f0fdf4_100%)] text-slate-950">
         <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
           <AnimatePresence>
             {showIntroGlow && (
               <>
                 <motion.div
                   initial={{ opacity: 0, scale: 0.6 }}
-                  animate={{ opacity: 0.75, scale: 1.05 }}
+                  animate={{ opacity: 0.7, scale: 1.04 }}
                   exit={{ opacity: 0, scale: 1.2 }}
                   transition={{ duration: 1.2, ease: "easeOut" }}
-                  className="absolute left-[8%] top-20 h-40 w-40 rounded-full bg-orange-300/35 blur-3xl"
+                  className="absolute left-[5%] top-20 h-44 w-72 rotate-[-10deg] rounded-[3rem] bg-amber-300/40 blur-3xl"
                 />
                 <motion.div
                   initial={{ opacity: 0, scale: 0.7 }}
                   animate={{ opacity: 0.65, scale: 1 }}
                   exit={{ opacity: 0, scale: 1.15 }}
                   transition={{ duration: 1.35, delay: 0.15, ease: "easeOut" }}
-                  className="absolute right-[10%] top-28 h-52 w-52 rounded-full bg-sky-300/30 blur-3xl"
+                  className="absolute right-[7%] top-24 h-52 w-80 rotate-[12deg] rounded-[3.5rem] bg-cyan-300/35 blur-3xl"
                 />
               </>
             )}
@@ -121,25 +121,26 @@ function HomeClient({ ownerId }: { ownerId?: string }) {
           <motion.div
             animate={{ x: [0, 30, -10, 0], y: [0, -20, 10, 0] }}
             transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute left-[-8rem] top-[-6rem] h-80 w-80 rounded-full bg-orange-300/30 blur-3xl"
+            className="absolute left-[-10rem] top-[-7rem] h-[28rem] w-[42rem] rotate-[-16deg] rounded-[5rem] bg-orange-300/35 blur-3xl"
           />
           <motion.div
             animate={{ x: [0, -50, 10, 0], y: [0, 20, -30, 0] }}
             transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute right-[-6rem] top-16 h-[26rem] w-[26rem] rounded-full bg-sky-300/30 blur-3xl"
+            className="absolute right-[-9rem] top-14 h-[30rem] w-[40rem] rotate-[14deg] rounded-[5rem] bg-sky-300/35 blur-3xl"
           />
           <motion.div
             animate={{ x: [0, 25, 0], y: [0, -25, 0] }}
             transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute bottom-[-8rem] left-1/3 h-72 w-72 rounded-full bg-emerald-300/20 blur-3xl"
+            className="absolute bottom-[-10rem] left-1/4 h-[24rem] w-[44rem] rotate-[8deg] rounded-[5rem] bg-emerald-300/25 blur-3xl"
           />
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.55)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.55)_1px,transparent_1px)] bg-[size:72px_72px] opacity-40" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.9),transparent_42%),linear-gradient(115deg,rgba(255,255,255,0.58)_0%,rgba(255,255,255,0.18)_44%,rgba(14,165,233,0.12)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.04)_1px,transparent_1px)] bg-[size:72px_72px] opacity-35" />
         </div>
 
         <motion.header
           initial={{ y: -18, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="fixed top-0 left-0 z-50 w-full border-b border-white/40 bg-white/45 backdrop-blur-2xl"
+          className="fixed top-0 left-0 z-50 w-full border-b border-white/70 bg-white/60 shadow-[0_10px_40px_rgba(14,165,233,0.08)] backdrop-blur-2xl"
         >
           <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
             <div className="group flex cursor-pointer items-center gap-3">
