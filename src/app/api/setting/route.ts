@@ -2,6 +2,9 @@ import connectDB from "@/lib/db";
 import Settings from "@/model/setting.model";
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function GET(req: Request) {
   try {
     await connectDB();

@@ -2,6 +2,7 @@ import connectDB from "@/lib/db";
 import Chat from "@/model/chat.model";
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(

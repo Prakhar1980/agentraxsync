@@ -4,6 +4,7 @@ import Chat from "@/model/chat.model";
 import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
 
+export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const groq = new Groq({
