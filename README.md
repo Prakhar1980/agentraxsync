@@ -162,5 +162,5 @@ Required environment variables on Render:
 - This project uses a custom Node server because Socket.IO is integrated alongside Next.js.
 
 ## Author
-$prakhar
+$prakhar - 
 Created for AgentraXSync AI — an intelligent chatbot platform designed to automate support, manage conversations, and seamlessly connect users with human agents.
